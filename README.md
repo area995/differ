@@ -22,7 +22,7 @@ Confronto semantico tra file chiave-valore (JSON, YAML) nel browser. I file non 
 
 ## Più di due file
 
-- **+ Aggiungi file** aggiunge File C, D, …; il selettore **Base** sceglie il file di riferimento, **×** rimuove
+- **+ Aggiungi file** aggiunge File C, D, …; il selettore **Base** sceglie il file di riferimento, l'icona cestino rimuove
   un file (quando sono più di due).
 - Con due file resta la vista affiancata (base a sinistra). Con tre o più compare una **matrice**: una riga per
   ogni path che differisce in almeno un file, una colonna per file, celle colorate rispetto alla base.
