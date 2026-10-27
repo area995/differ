@@ -120,6 +120,29 @@ Pulsante **Salva** per pannello: scarica il testo corrente (nome file originale,
 Fuori scope: riporto di chiavi spostate, eliminazione/inserimento della prima chiave di un elemento compatto
 YAML (`- name: x`, rifiutato dalla verifica), "applica tutte".
 
+### Confronto tra N file
+
+**Input.** I pannelli diventano una lista: si parte da File A e File B, il pulsante "+ Aggiungi file" aggiunge
+File C, D, … (prima lettera libera). Ogni pannello ha un selettore **Base** (radio, default A) e, quando i
+pannelli sono più di due, un pulsante per rimuoverlo (se si rimuove la base, diventa base il primo pannello).
+I pannelli vuoti sono ignorati; se la base è vuota non c'è risultato.
+
+**Modalità.** Due file non vuoti → vista attuale a coppie, con la base a sinistra. Tre o più → matrice.
+Le opzioni valgono per tutti i confronti. Root: messaggio con i file in cui è applicata. "Spazi e tabulazioni"
+abilitata solo se tutti i file hanno lo stesso formato e la root è applicata a tutti o a nessuno.
+
+**Matrice** (`core/multi.ts`, `buildMatrix`). Si calcola `diff(base, file_i)` per ogni altro file; le righe sono
+i path con almeno una differenza, ordinate per posizione nella base (per i nodi assenti dalla base: punto di
+inserimento, come `locateEntry`). Colonne: path, base, un file per colonna. Ogni cella mostra il valore nel
+file (`—` se assente) e lo stato rispetto alla base: uguale, o il tipo di differenza; se la differenza è su un
+antenato (es. `db` rimosso, riga `db.pool`) la cella ne eredita lo stato, attenuata. Sopra la tabella, il
+conteggio delle differenze per file.
+
+Click su una cella o su un path: tutti gli editor si posizionano sulla riga (come nella vista a coppie). La cella
+selezionata mostra una barra azioni: `Base → File X`, `File X → Base` (riporto con `applyEntry` sulla coppia) e
+`Base → tutti` (riporta il valore della base in ogni file che differisce direttamente su quel path); pulsanti
+disabilitati con motivo come nella vista a coppie (anche per celle uguali o con differenza solo ereditata).
+
 ## Architettura
 
 ```
