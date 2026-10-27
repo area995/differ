@@ -69,7 +69,7 @@ export function matchArrays(a: Node[], b: Node[], opts: MatchOptions): ArrayMatc
   return res;
 }
 
-function fieldValue(node: Node, field: string): string | undefined {
+export function fieldValue(node: Node, field: string): string | undefined {
   if (node.kind !== 'object') return undefined;
   const entry = node.entries.find((e) => e.key === field);
   return entry && entry.value.kind === 'scalar' ? String(entry.value.value) : undefined;
