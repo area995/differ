@@ -31,7 +31,14 @@ export type ResultActions = {
   select(e: DiffEntry): { a: Range; b: Range };
 };
 
-export type ResultInput = { textA: string; textB: string; entries: DiffEntry[]; actions?: ResultActions };
+export type ResultInput = {
+  textA: string;
+  textB: string;
+  entries: DiffEntry[];
+  actions?: ResultActions;
+  /** Pane titles, "File A" / "File B" by default. */
+  labels?: { a: string; b: string };
+};
 
 const APPLY_BUTTONS: [Direction, string, string][] = [
   ['aToB', 'A → B', 'Riporta in B il contenuto di A'],
@@ -50,7 +57,8 @@ export function renderResult(root: HTMLElement, input: ResultInput | null): void
   const paneA = pane(input.textA, lineMarks(input.entries, 'a'), 'A');
   const paneB = pane(input.textB, lineMarks(input.entries, 'b'), 'B');
   const panes = el('div', 'panes');
-  panes.append(paneA, paneB);
+  const labels = input.labels ?? { a: 'File A', b: 'File B' };
+  panes.append(titled(paneA, labels.a), titled(paneB, labels.b));
   root.append(summary(input.entries), panes, list(input.entries, paneA, paneB, input.actions));
 }
 
@@ -96,6 +104,14 @@ function lineMarks(entries: DiffEntry[], side: 'a' | 'b'): Map<number, DiffKind>
     }
   }
   return marks;
+}
+
+function titled(pane: HTMLElement, label: string): HTMLElement {
+  const box = el('div', 'pane-box');
+  const title = el('h3', 'pane-title');
+  title.textContent = label;
+  box.append(title, pane);
+  return box;
 }
 
 function pane(text: string, marks: Map<number, DiffKind>, side: string): HTMLElement {

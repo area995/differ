@@ -1,3 +1,4 @@
+import { markEdit, noMarks } from '../core/linemarks';
 import type { Format, ParseError, Range } from '../core/model';
 import type { Edit } from '../core/patch';
 import { toOffset } from '../core/text';
@@ -55,8 +56,14 @@ export function createInputPanel(
   textarea.spellcheck = false;
   textarea.wrap = 'off';
   textarea.placeholder = 'Incolla qui il contenuto o trascina un file';
+  // shades applied lines behind the (transparent) textarea, which cannot color its own lines
+  const backdrop = el('div', 'backdrop');
+  const backdropLines = el('div', 'backdrop-lines');
+  backdrop.append(backdropLines);
+  const field = el('div', 'field');
+  field.append(backdrop, textarea);
   const editor = el('div', 'editor');
-  editor.append(gutter, textarea);
+  editor.append(gutter, field);
 
   const error = el('div', 'error');
   error.hidden = true;
@@ -65,22 +72,38 @@ export function createInputPanel(
   let lineCount = -1;
   let errorLine = 0;
   let current: [number, number] | null = null;
+  let marks = noMarks();
+  let applying = false;
+  const syncScroll = () => {
+    gutter.scrollTop = textarea.scrollTop;
+    backdropLines.style.transform = `translateY(${-textarea.scrollTop}px)`;
+  };
   const renderGutter = (force = false) => {
     const n = textarea.value.split('\n').length;
     if (n !== lineCount || force) {
       lineCount = n;
+      const lines = Array.from({ length: n }, (_, i) => i + 1);
       gutter.replaceChildren(
-        ...Array.from({ length: n }, (_, i) => {
-          const line = i + 1;
+        ...lines.map((line) => {
           const span = el('span');
           span.classList.toggle('err', line === errorLine);
           span.classList.toggle('cur', !!current && line >= current[0] && line <= current[1]);
+          const sign = marks.lines.get(line) === 'added' ? '+' : marks.removedBefore.has(line) ? '−' : '';
+          if (sign) span.dataset.sign = sign;
           span.textContent = String(line);
           return span;
         }),
       );
+      backdropLines.replaceChildren(
+        ...lines.map((line) => {
+          const shade = el('div');
+          if (marks.lines.has(line)) shade.className = 'applied';
+          else if (marks.removedBefore.has(line)) shade.className = 'removed-before';
+          return shade;
+        }),
+      );
     }
-    gutter.scrollTop = textarea.scrollTop;
+    syncScroll();
   };
 
   const emit = () => onChange({ ...state });
@@ -91,19 +114,20 @@ export function createInputPanel(
     state.text = await file.text();
     state.fileName = file.name;
     textarea.value = state.text;
-    renderGutter();
+    marks = noMarks();
+    renderGutter(true);
     emit();
   };
 
   textarea.addEventListener('input', () => {
     state.text = textarea.value;
     current = null;
+    // a manual edit (or undo) makes the applied-line marks unreliable
+    if (!applying) marks = noMarks();
     renderGutter(true);
     emit();
   });
-  textarea.addEventListener('scroll', () => {
-    gutter.scrollTop = textarea.scrollTop;
-  });
+  textarea.addEventListener('scroll', syncScroll);
   select.addEventListener('change', () => {
     state.choice = select.value as FormatChoice;
     emit();
@@ -157,7 +181,7 @@ export function createInputPanel(
       textarea.setSelectionRange(toOffset(text, range.start), toOffset(text, range.end));
       const lineHeight = parseFloat(getComputedStyle(textarea).lineHeight) || 19.5;
       textarea.scrollTop = Math.max(0, (range.start.line - 1) * lineHeight - textarea.clientHeight / 2);
-      gutter.scrollTop = textarea.scrollTop;
+      syncScroll();
     },
 
     replace(edit) {
@@ -165,6 +189,7 @@ export function createInputPanel(
       const expected = before.slice(0, edit.start) + edit.text + before.slice(edit.end);
       textarea.focus();
       textarea.setSelectionRange(edit.start, edit.end);
+      applying = true;
       let undoable = false;
       try {
         // execCommand keeps the change in the browser undo stack (Ctrl+Z)
@@ -178,6 +203,9 @@ export function createInputPanel(
       } else if (!undoable) {
         textarea.dispatchEvent(new Event('input'));
       }
+      applying = false;
+      marks = markEdit(before, textarea.value, marks);
+      renderGutter(true);
       textarea.setSelectionRange(edit.start, edit.start + edit.text.length);
     },
   };

@@ -110,6 +110,11 @@ Se la verifica fallisce non si applica nulla e compare "Impossibile riportare au
 Root/Includi: i path vengono riportati a quelli reali di ciascun file.
 
 La modifica passa dall'editor (`execCommand('insertText')` dove disponibile) così Ctrl+Z la annulla.
+Le righe toccate da un riporto restano evidenziate nell'editor di destinazione (`core/linemarks.ts`, uno
+strato dietro la textarea): sfondo grigio per righe modificate e aggiunte, `+` nel gutter per le aggiunte, `−`
+e una linea grigia dove sono state rimosse righe. Le evidenziazioni si accumulano e si spostano con i riporti
+successivi; si azzerano a ogni modifica manuale (anche Ctrl+Z) o caricamento di un file.
+I pannelli del risultato hanno il titolo "File A" / "File B" (con il nome del file se aperto da disco).
 Pulsante **Salva** per pannello: scarica il testo corrente (nome file originale, oppure `file-a.<formato>`).
 
 Fuori scope: riporto di chiavi spostate, eliminazione/inserimento della prima chiave di un elemento compatto

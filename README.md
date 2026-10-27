@@ -19,6 +19,8 @@ Confronto semantico tra file chiave-valore (JSON, YAML) nel browser. I file non 
 - Pulsanti `A → B` / `B → A`: riportano la modifica nell'altro file toccando solo il testo di quel nodo
   (valori, chiavi o elementi aggiunti/rimossi, righe di formattazione). Il risultato viene verificato prima di
   applicarlo; se non è possibile farlo in modo sicuro compare un avviso. `Ctrl+Z` nell'editor annulla.
+- Le righe cambiate da un riporto restano evidenziate in grigio nell'editor (`+` righe aggiunte, `−` righe
+  rimosse) finché il testo non viene modificato a mano.
 - **Salva** su ogni pannello scarica il contenuto attuale.
 
 ## Sviluppo

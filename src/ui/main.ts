@@ -96,6 +96,7 @@ function run(): void {
     textA: inputA.text,
     textB: inputB.text,
     entries,
+    labels: { a: label('File A', inputA), b: label('File B', inputB) },
     actions: {
       support: (e) => patchSupport(e, docA, docB, opts.ignoreArrayOrder),
       apply: (e, direction) => applyChange(e, direction, docA, docB),
@@ -108,6 +109,10 @@ function run(): void {
       },
     },
   });
+}
+
+function label(name: string, input: InputState): string {
+  return input.fileName ? `${name} · ${input.fileName}` : name;
 }
 
 function applyChange(entry: DiffEntry, direction: Direction, docA: PatchDoc, docB: PatchDoc): void {

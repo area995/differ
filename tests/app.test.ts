@@ -217,6 +217,34 @@ describe('app', () => {
     expect(document.querySelector('.equal')).not.toBeNull();
   });
 
+  it('keeps applied changes highlighted in the editor until it is edited by hand', () => {
+    const signs = () =>
+      [...document.querySelectorAll('#input-b .gutter span')].map((s) => s.getAttribute('data-sign') ?? '');
+    const shades = () => [...document.querySelectorAll('#input-b .backdrop-lines > div')].map((d) => d.className);
+
+    type(0, 'a: 1\nb: 2\n');
+    type(1, 'a: 5\nc: 3\n');
+    expect(items()).toEqual(['modificata$.a1 → 5', 'rimossa$.b2', 'aggiunta$.c3']);
+
+    apply(0, 'A → B'); // a: 5 -> a: 1
+    apply(0, 'A → B'); // insert b
+    apply(0, 'A → B'); // delete c
+    expect(textareas()[1].value).toBe('a: 1\nb: 2\n');
+    expect(signs()).toEqual(['', '+', '−']);
+    expect(shades()).toEqual(['applied', 'applied', 'removed-before']);
+
+    type(1, 'a: 1\nb: 3\n');
+    expect(signs()).toEqual(['', '', '']);
+    expect(shades()).toEqual(['', '', '']);
+  });
+
+  it('labels the result panes with the file names', () => {
+    type(0, 'a: 1\n');
+    type(1, 'a: 2\n');
+    const titles = [...document.querySelectorAll('.pane-title')].map((t) => t.textContent);
+    expect(titles).toEqual(['File A', 'File B']);
+  });
+
   it('explains when a difference cannot be applied', () => {
     type(0, 'l:\n  - x: 1\n');
     type(1, 'l:\n  - name: a\n    x: 1\n');
