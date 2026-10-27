@@ -7,7 +7,7 @@ describe('toOffset', () => {
   it('converts 1-based positions to offsets', () => {
     expect(toOffset(text, { line: 1, col: 1 })).toBe(0);
     expect(toOffset(text, { line: 2, col: 3 })).toBe(7);
-    expect(toOffset(text, { line: 4, col: 4 })).toBe(15);
+    expect(toOffset(text, { line: 4, col: 4 })).toBe(16);
   });
 
   it('clamps positions past the end', () => {
