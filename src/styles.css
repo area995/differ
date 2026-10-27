@@ -190,6 +190,20 @@ textarea,
   font-weight: 700;
 }
 
+.gutter span.cur {
+  background: var(--moved);
+  color: var(--fg);
+}
+
+.save {
+  padding: 2px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg);
+  cursor: pointer;
+}
+
 textarea {
   flex: 1;
   padding: 6px 8px;
@@ -210,6 +224,14 @@ textarea {
 /* result */
 .result {
   margin-top: 16px;
+}
+
+.notice {
+  margin-top: 12px;
+  padding: 8px 12px;
+  border-left: 4px solid var(--removed-bar);
+  border-radius: 4px;
+  background: var(--removed);
 }
 
 .summary {
@@ -281,7 +303,8 @@ textarea {
 
 .diff-list li {
   display: grid;
-  grid-template-columns: 8em minmax(0, 1fr) minmax(0, 2fr);
+  grid-template-columns: 8em minmax(0, 1fr) minmax(0, 2fr) auto;
+  align-items: center;
   gap: 8px;
   padding: 6px 10px;
   border-left-width: 4px;
@@ -296,6 +319,32 @@ textarea {
 .diff-list .path,
 .diff-list .desc {
   overflow-wrap: anywhere;
+}
+
+.apply {
+  display: flex;
+  gap: 4px;
+}
+
+.apply button {
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg);
+  font: inherit;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.apply button:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.apply button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 @media (max-width: 600px) {

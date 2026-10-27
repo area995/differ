@@ -1,4 +1,5 @@
 import { formatPath, type DiffEntry, type DiffKind } from '../core/model';
+import type { Direction } from '../core/patch';
 import { el } from './dom';
 
 const COUNT_LABELS: Record<DiffKind, string> = {
@@ -22,7 +23,19 @@ const ITEM_LABELS: Record<DiffKind, string> = {
 /** When several differences touch the same line, the later kind wins. */
 const PRIORITY: DiffKind[] = ['whitespace', 'moved', 'added', 'removed', 'changed', 'type'];
 
-export type ResultInput = { textA: string; textB: string; entries: DiffEntry[] };
+export type ResultActions = {
+  /** Why the entry cannot be applied, or null. */
+  support(e: DiffEntry): string | null;
+  apply(e: DiffEntry, direction: Direction): void;
+  select(e: DiffEntry): void;
+};
+
+export type ResultInput = { textA: string; textB: string; entries: DiffEntry[]; actions?: ResultActions };
+
+const APPLY_BUTTONS: [Direction, string, string][] = [
+  ['aToB', 'A → B', 'Riporta in B il contenuto di A'],
+  ['bToA', 'B → A', 'Riporta in A il contenuto di B'],
+];
 
 export function renderResult(root: HTMLElement, input: ResultInput | null): void {
   root.replaceChildren();
@@ -37,7 +50,7 @@ export function renderResult(root: HTMLElement, input: ResultInput | null): void
   const paneB = pane(input.textB, lineMarks(input.entries, 'b'), 'B');
   const panes = el('div', 'panes');
   panes.append(paneA, paneB);
-  root.append(summary(input.entries), panes, list(input.entries, paneA, paneB));
+  root.append(summary(input.entries), panes, list(input.entries, paneA, paneB, input.actions));
 }
 
 export function describeEntry(e: DiffEntry): string {
@@ -102,7 +115,7 @@ function pane(text: string, marks: Map<number, DiffKind>, side: string): HTMLEle
   return div;
 }
 
-function list(entries: DiffEntry[], paneA: HTMLElement, paneB: HTMLElement): HTMLElement {
+function list(entries: DiffEntry[], paneA: HTMLElement, paneB: HTMLElement, actions?: ResultActions): HTMLElement {
   const ul = el('ul', 'diff-list');
   for (const e of entries) {
     const li = el('li', `d-${e.kind}`);
@@ -113,13 +126,33 @@ function list(entries: DiffEntry[], paneA: HTMLElement, paneB: HTMLElement): HTM
     const desc = el('span', 'desc');
     desc.textContent = describeEntry(e);
     li.append(kind, path, desc);
+    if (actions) li.append(applyButtons(e, actions));
     li.addEventListener('click', () => {
       if (e.a) reveal(paneA, e.a.range.start.line);
       if (e.b) reveal(paneB, e.b.range.start.line);
+      actions?.select(e);
     });
     ul.append(li);
   }
   return ul;
+}
+
+function applyButtons(e: DiffEntry, actions: ResultActions): HTMLElement {
+  const box = el('span', 'apply');
+  const reason = actions.support(e);
+  for (const [direction, label, title] of APPLY_BUTTONS) {
+    const button = el('button');
+    button.type = 'button';
+    button.textContent = label;
+    button.disabled = reason !== null;
+    button.title = reason ?? title;
+    button.addEventListener('click', (event) => {
+      event.stopPropagation();
+      actions.apply(e, direction);
+    });
+    box.append(button);
+  }
+  return box;
 }
 
 function reveal(pane: HTMLElement, line: number): void {

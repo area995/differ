@@ -2,14 +2,33 @@ import '../styles.css';
 import { detectFormat } from '../core/detect';
 import { diff } from '../core/diff';
 import { filterEntries } from '../core/filter';
-import { DEFAULT_OPTIONS, formatPath, type DiffOptions, type Format, type ParseResult, type Path } from '../core/model';
+import {
+  DEFAULT_OPTIONS,
+  formatPath,
+  type DiffEntry,
+  type DiffOptions,
+  type Format,
+  type ParseResult,
+  type Path,
+} from '../core/model';
 import { parse } from '../core/parse';
+import { applyEntry, patchSupport, type Direction, type PatchDoc } from '../core/patch';
 import { applyRoot, parsePath, parsePathList, selectNode, type Scoped } from '../core/select';
+import { el } from './dom';
 import { createInputPanel, type InputState } from './input';
 import { createOptionsBar } from './options';
 import { renderResult } from './result';
 
 const byId = (id: string) => document.getElementById(id)!;
+
+const notice = el('div', 'notice');
+notice.hidden = true;
+byId('result').before(notice);
+
+function showNotice(message: string | null): void {
+  notice.hidden = !message;
+  notice.textContent = message ?? '';
+}
 
 const SAME_FORMAT_ONLY = 'Disponibile solo con file dello stesso formato';
 const ROOT_ONE_SIDE = 'Non disponibile quando la root è applicata a un solo file';
@@ -71,7 +90,38 @@ function run(): void {
 
   const raw = sameFormat && !oneSided ? { a: inputA.text, b: inputB.text } : undefined;
   const entries = filterEntries(diff(scope.a, scope.b, opts, raw), includes.paths);
-  renderResult(byId('result'), { textA: inputA.text, textB: inputB.text, entries });
+  const docA: PatchDoc = { text: inputA.text, format: a.format, node: scope.a, rootPath: scope.inA ? rootPath.path : [] };
+  const docB: PatchDoc = { text: inputB.text, format: b.format, node: scope.b, rootPath: scope.inB ? rootPath.path : [] };
+  renderResult(byId('result'), {
+    textA: inputA.text,
+    textB: inputB.text,
+    entries,
+    actions: {
+      support: (e) => patchSupport(e, docA, docB, opts.ignoreArrayOrder),
+      apply: (e, direction) => applyChange(e, direction, docA, docB),
+      select: (e) => {
+        showNotice(null);
+        panelA.reveal(e.a?.range ?? null);
+        panelB.reveal(e.b?.range ?? null);
+      },
+    },
+  });
+}
+
+function applyChange(entry: DiffEntry, direction: Direction, docA: PatchDoc, docB: PatchDoc): void {
+  if (docA.text !== inputA.text || docB.text !== inputB.text) {
+    // the result is about to be recomputed: its positions no longer match the editors
+    showNotice('Il contenuto è cambiato: riprova dopo l\'aggiornamento del confronto');
+    run();
+    return;
+  }
+  const r = applyEntry(entry, direction, docA, docB);
+  if (!r.ok) {
+    showNotice(r.error);
+    return;
+  }
+  showNotice(null);
+  (direction === 'aToB' ? panelB : panelA).replace(r.edit);
 }
 
 function missingIncludes(paths: Path[], scope: Scoped): string[] {

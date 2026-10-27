@@ -2,7 +2,22 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 const textareas = () => document.querySelectorAll<HTMLTextAreaElement>('textarea');
-const items = () => [...document.querySelectorAll('.diff-list li')].map((li) => li.textContent);
+const items = () =>
+  [...document.querySelectorAll('.diff-list li')].map((li) =>
+    [...li.querySelectorAll('.kind, .path, .desc')].map((x) => x.textContent).join(''),
+  );
+
+function applyButton(index: number, label: 'A → B' | 'B → A'): HTMLButtonElement {
+  const li = document.querySelectorAll('.diff-list li')[index];
+  return [...li.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent === label)!;
+}
+
+function apply(index: number, label: 'A → B' | 'B → A'): void {
+  applyButton(index, label).click();
+  vi.advanceTimersByTime(300);
+}
+
+const selected = (ta: HTMLTextAreaElement) => ta.value.slice(ta.selectionStart, ta.selectionEnd);
 
 function type(index: number, text: string): void {
   const ta = textareas()[index];
@@ -152,5 +167,68 @@ describe('app', () => {
     setInclude('');
     setRoot('');
     expect(scopeMessage()).toBe('');
+  });
+
+  it('selects the clicked difference in both editors', () => {
+    type(0, 'a: 1\nb: 2\n');
+    type(1, 'a: 1\nb: 3\n');
+    document.querySelector<HTMLElement>('.diff-list li')!.click();
+    const [ta, tb] = textareas();
+    expect(selected(ta)).toBe('2');
+    expect(selected(tb)).toBe('3');
+    expect(document.querySelector('#input-a .gutter .cur')?.textContent).toBe('2');
+    expect(document.querySelector('#input-b .gutter .cur')?.textContent).toBe('2');
+  });
+
+  it('applies a difference in either direction', () => {
+    type(0, 'a: 1\nb: 2\n');
+    type(1, 'a: 1\nb: 3\nc: 4\n');
+    expect(items()).toEqual(['modificata$.b2 → 3', 'aggiunta$.c4']);
+
+    apply(0, 'A → B');
+    expect(textareas()[1].value).toBe('a: 1\nb: 2\nc: 4\n');
+    expect(selected(textareas()[1])).toBe('2');
+    expect(items()).toEqual(['aggiunta$.c4']);
+
+    apply(0, 'B → A');
+    expect(textareas()[0].value).toBe('a: 1\nb: 2\nc: 4\n');
+    expect(document.querySelector('.equal')).not.toBeNull();
+  });
+
+  it('explains when a difference cannot be applied', () => {
+    type(0, 'l:\n  - x: 1\n');
+    type(1, 'l:\n  - name: a\n    x: 1\n');
+    apply(0, 'A → B');
+    expect(textareas()[1].value).toBe('l:\n  - name: a\n    x: 1\n');
+    const notice = document.querySelector<HTMLElement>('.notice')!;
+    expect(notice.hidden).toBe(false);
+    expect(notice.textContent).toBe('Impossibile riportare automaticamente questa modifica');
+  });
+
+  it('disables apply for moved keys', () => {
+    type(0, 'a: 1\nb: 2\n');
+    type(1, 'b: 2\na: 1\n');
+    toggle('Posizione chiavi');
+    expect(applyButton(0, 'A → B').disabled).toBe(true);
+    expect(applyButton(0, 'A → B').title).toMatch(/spostate/);
+    toggle('Posizione chiavi');
+  });
+
+  it('saves the current text of a panel', async () => {
+    const created: Blob[] = [];
+    URL.createObjectURL = vi.fn((blob: Blob) => {
+      created.push(blob);
+      return 'blob:test';
+    });
+    URL.revokeObjectURL = vi.fn();
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      expect(this.download).toBe('file-b.yaml');
+    });
+
+    type(1, 'x: 1\n');
+    document.querySelector<HTMLButtonElement>('#input-b .save')!.click();
+    expect(click).toHaveBeenCalledOnce();
+    expect(await created[0].text()).toBe('x: 1\n');
+    click.mockRestore();
   });
 });
