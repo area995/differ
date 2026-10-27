@@ -1,7 +1,7 @@
 import type { DiffOptions } from '../core/model';
 import { el } from './dom';
 
-type BoolKey = Exclude<keyof DiffOptions, 'arrayKeyField' | 'root'>;
+type BoolKey = Exclude<keyof DiffOptions, 'arrayKeyField' | 'root' | 'include'>;
 
 const CHECKS: { key: BoolKey; label: string; title: string }[] = [
   { key: 'keys', label: 'Differenze chiavi', title: 'Chiavi aggiunte o rimosse' },
@@ -14,7 +14,7 @@ const CHECKS: { key: BoolKey; label: string; title: string }[] = [
 
 export type OptionsBar = {
   setWhitespaceEnabled(enabled: boolean, reason: string): void;
-  setRootMessage(message: string | null, kind: 'info' | 'error'): void;
+  setScopeMessage(message: string | null, kind: 'info' | 'error'): void;
 };
 
 export function createOptionsBar(
@@ -26,18 +26,32 @@ export function createOptionsBar(
   const labels = new Map<BoolKey, HTMLLabelElement>();
   const inputs = new Map<BoolKey, HTMLInputElement>();
 
-  const rootInput = el('input');
-  rootInput.type = 'text';
-  rootInput.placeholder = 'tutto il documento (es. $.server)';
-  rootInput.value = opts.root;
-  rootInput.addEventListener('input', () => {
-    opts.root = rootInput.value;
-    onChange({ ...opts });
-  });
-  const rootLabel = el('label', 'opt');
-  rootLabel.title = 'Path del nodo da confrontare in entrambi i file. Si può copiare dalla lista differenze.';
-  rootLabel.append('Root', rootInput);
-  root.append(rootLabel);
+  const pathField = (key: 'root' | 'include', label: string, placeholder: string, title: string) => {
+    const input = el('input');
+    input.type = 'text';
+    input.placeholder = placeholder;
+    input.value = opts[key];
+    input.addEventListener('input', () => {
+      opts[key] = input.value;
+      onChange({ ...opts });
+    });
+    const wrapper = el('label', 'opt');
+    wrapper.title = title;
+    wrapper.append(label, input);
+    root.append(wrapper);
+  };
+  pathField(
+    'root',
+    'Root',
+    'tutto il documento (es. $.server)',
+    'Path il cui valore sostituisce il documento nei file che lo contengono. Si può copiare dalla lista differenze.',
+  );
+  pathField(
+    'include',
+    'Includi',
+    'tutti i sottoalberi (es. server, db.pool)',
+    'Path relativi alla root, separati da virgola: confronta solo questi sottoalberi.',
+  );
 
   const fieldInput = el('input');
   fieldInput.type = 'text';
@@ -71,9 +85,9 @@ export function createOptionsBar(
   field.append(fieldInput);
   root.append(field);
 
-  const rootMessage = el('div', 'root-msg');
-  rootMessage.hidden = true;
-  root.append(rootMessage);
+  const scopeMessage = el('div', 'scope-msg');
+  scopeMessage.hidden = true;
+  root.append(scopeMessage);
 
   return {
     setWhitespaceEnabled(enabled, reason) {
@@ -82,10 +96,10 @@ export function createOptionsBar(
       label.classList.toggle('disabled', !enabled);
       label.title = enabled ? CHECKS[2].title : reason;
     },
-    setRootMessage(message, kind) {
-      rootMessage.hidden = !message;
-      rootMessage.textContent = message ?? '';
-      rootMessage.classList.toggle('error', kind === 'error');
+    setScopeMessage(message, kind) {
+      scopeMessage.hidden = !message;
+      scopeMessage.textContent = message ?? '';
+      scopeMessage.classList.toggle('error', kind === 'error');
     },
   };
 }

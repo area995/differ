@@ -98,13 +98,14 @@ h2 {
   color: var(--fg);
 }
 
-.root-msg {
+.scope-msg {
   flex-basis: 100%;
   color: var(--muted);
   font-size: 0.9rem;
+  white-space: pre-line;
 }
 
-.root-msg.error {
+.scope-msg.error {
   color: var(--error);
 }
 

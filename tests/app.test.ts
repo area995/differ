@@ -22,15 +22,18 @@ function toggle(label: string): void {
   vi.advanceTimersByTime(300);
 }
 
-function setRoot(text: string): void {
-  const input = document.querySelector<HTMLInputElement>('#options input[placeholder^="tutto"]')!;
+function setText(placeholderStart: string, text: string): void {
+  const input = document.querySelector<HTMLInputElement>(`#options input[placeholder^="${placeholderStart}"]`)!;
   input.value = text;
   input.dispatchEvent(new Event('input'));
   vi.advanceTimersByTime(300);
 }
 
-function rootMessage(): string {
-  const e = document.querySelector<HTMLElement>('.root-msg')!;
+const setRoot = (text: string) => setText('tutto il documento', text);
+const setInclude = (text: string) => setText('tutti i sottoalberi', text);
+
+function scopeMessage(): string {
+  const e = document.querySelector<HTMLElement>('.scope-msg')!;
   return e.hidden ? '' : (e.textContent ?? '');
 }
 
@@ -103,25 +106,51 @@ describe('app', () => {
 
     setRoot('config');
     expect(items()).toEqual(['modificata$.port1 → 2']);
-    expect(rootMessage()).toBe("Root $.config applicata solo a A: confrontata con l'intero file B");
+    expect(scopeMessage()).toBe("Root $.config applicata solo a A: confrontata con l'intero file B");
     expect(option('Spazi e tabulazioni').disabled).toBe(true);
     expect(document.querySelector('.pane[data-side="A"] [data-line="2"]')!.className).toContain('d-changed');
 
     type(1, 'config:\n  port: 2\n  host: a\n');
     expect(items()).toEqual(['modificata$.port1 → 2']);
-    expect(rootMessage()).toBe('Root $.config applicata a A e B');
+    expect(scopeMessage()).toBe('Root $.config applicata a A e B');
     expect(option('Spazi e tabulazioni').disabled).toBe(false);
 
     setRoot('nope');
-    expect(rootMessage()).toBe('Root $.nope non trovata: confronto tra i file interi');
+    expect(scopeMessage()).toBe('Root $.nope non trovata: confronto tra i file interi');
     expect(items()).toEqual(['modificata$.config.port1 → 2']);
 
     setRoot('server[');
-    expect(rootMessage()).toBe('Root non valida: server[');
-    expect(document.querySelector('.root-msg')!.classList.contains('error')).toBe(true);
+    expect(scopeMessage()).toBe('Root non valida: server[');
+    expect(document.querySelector('.scope-msg')!.classList.contains('error')).toBe(true);
     expect(document.getElementById('result')!.textContent).toBe('');
 
     setRoot('');
-    expect(rootMessage()).toBe('');
+    expect(scopeMessage()).toBe('');
+  });
+
+  it('compares only the included subtrees of the root', () => {
+    setRoot('config');
+    type(0, 'config:\n  server:\n    port: 1\n  db:\n    pool: 5\n    user: a\n  logging: debug\n');
+    type(1, 'server:\n  port: 2\ndb:\n  pool: 9\n  user: b\nlogging: info\n');
+    expect(items()).toHaveLength(4);
+
+    setInclude('server, db.pool');
+    expect(items()).toEqual(['modificata$.server.port1 → 2', 'modificata$.db.pool5 → 9']);
+    expect(document.querySelector('.pane[data-side="A"] [data-line="6"]')!.className).toBe('line');
+
+    setInclude('server, nope');
+    expect(items()).toEqual(['modificata$.server.port1 → 2']);
+    expect(scopeMessage()).toBe(
+      "Root $.config applicata solo a A: confrontata con l'intero file B\nIncludi: $.nope non trovato né in A né in B",
+    );
+
+    setInclude('server, db[');
+    expect(scopeMessage()).toBe('Includi non valido: db[');
+    expect(document.querySelector('.scope-msg')!.classList.contains('error')).toBe(true);
+    expect(document.getElementById('result')!.textContent).toBe('');
+
+    setInclude('');
+    setRoot('');
+    expect(scopeMessage()).toBe('');
   });
 });

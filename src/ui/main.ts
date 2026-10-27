@@ -1,9 +1,10 @@
 import '../styles.css';
 import { detectFormat } from '../core/detect';
 import { diff } from '../core/diff';
-import { DEFAULT_OPTIONS, formatPath, type DiffOptions, type Format, type ParseResult } from '../core/model';
+import { filterEntries } from '../core/filter';
+import { DEFAULT_OPTIONS, formatPath, type DiffOptions, type Format, type ParseResult, type Path } from '../core/model';
 import { parse } from '../core/parse';
-import { applyRoot, parsePath, type Scoped } from '../core/select';
+import { applyRoot, parsePath, parsePathList, selectNode, type Scoped } from '../core/select';
 import { createInputPanel, type InputState } from './input';
 import { createOptionsBar } from './options';
 import { renderResult } from './result';
@@ -50,23 +51,33 @@ function run(): void {
 
   const sameFormat = !a || !b || a.format === b.format;
   const rootPath = parsePath(opts.root);
+  const includes = parsePathList(opts.include);
 
-  if (!rootPath.ok || !a || !b || !a.result.ok || !b.result.ok) {
-    optionsBar.setRootMessage(rootPath.ok ? null : rootPath.error, 'error');
+  if (!rootPath.ok || !includes.ok || !a || !b || !a.result.ok || !b.result.ok) {
+    const syntaxError = !rootPath.ok ? rootPath.error : !includes.ok ? includes.error : null;
+    optionsBar.setScopeMessage(syntaxError, 'error');
     optionsBar.setWhitespaceEnabled(sameFormat, SAME_FORMAT_ONLY);
     renderResult(byId('result'), null);
     return;
   }
   const scope = applyRoot(a.result.node, b.result.node, rootPath.path);
-  optionsBar.setRootMessage(rootMessage(formatPath(rootPath.path), scope), 'info');
+  const notes = [rootMessage(formatPath(rootPath.path), scope), ...missingIncludes(includes.paths, scope)];
+  const info = notes.filter((n): n is string => n !== null);
+  optionsBar.setScopeMessage(info.length ? info.join('\n') : null, 'info');
 
   // nesting changes the indentation of every line, so whitespace makes no sense on one side only
   const oneSided = scope.inA !== scope.inB;
   optionsBar.setWhitespaceEnabled(sameFormat && !oneSided, oneSided ? ROOT_ONE_SIDE : SAME_FORMAT_ONLY);
 
   const raw = sameFormat && !oneSided ? { a: inputA.text, b: inputB.text } : undefined;
-  const entries = diff(scope.a, scope.b, opts, raw);
+  const entries = filterEntries(diff(scope.a, scope.b, opts, raw), includes.paths);
   renderResult(byId('result'), { textA: inputA.text, textB: inputB.text, entries });
+}
+
+function missingIncludes(paths: Path[], scope: Scoped): string[] {
+  return paths
+    .filter((p) => !selectNode(scope.a, p) && !selectNode(scope.b, p))
+    .map((p) => `Includi: ${formatPath(p)} non trovato né in A né in B`);
 }
 
 function rootMessage(path: string, scope: Scoped): string | null {

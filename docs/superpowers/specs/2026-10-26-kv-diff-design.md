@@ -38,7 +38,7 @@ all'utente di scegliere quali categorie di differenze evidenziare. Formati v1: J
 | Campo chiave array | vuoto | con "Ignora ordine array" attivo, abbina oggetti in array per valore di questo campo (es. `name`, `id`) |
 | Tipi laschi | off | scalari confrontati per rappresentazione stringa normalizzata (`8080` == `"8080"`) |
 | Root | vuoto | path del nodo da usare come radice del confronto nei file che lo contengono (vedi sotto) |
-| Includi | vuoto | path relativi alla root, separati da virgola o a capo: confronta solo quei sottoalberi (vedi sotto) |
+| Includi | vuoto | path relativi alla root, separati da virgola: confronta solo quei sottoalberi (vedi sotto) |
 
 "Solo chiavi" = Differenze valori off. "Solo valori" = Differenze chiavi off.
 Con entrambe off, restano solo eventuali `whitespace` e `moved`.
@@ -64,7 +64,7 @@ cambia l'indentazione di tutte le righe.
 ### Sottoalberi inclusi
 
 Campo "Includi": lista di path (stessa sintassi di Root) relativi alla root già applicata a ciascun file,
-separati da virgola o a capo; le virgole dentro `[...]` o tra virgolette non separano. Vuoto = tutto.
+separati da virgola (il parser accetta anche a capo); le virgole dentro `[...]` o tra virgolette non separano. Vuoto = tutto.
 
 Il diff si calcola sull'intera root e poi si filtra (`core/filter.ts`, `filterEntries`). Restano:
 - le differenze con path dentro un sottoalbero incluso;

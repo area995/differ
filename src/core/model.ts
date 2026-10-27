@@ -42,6 +42,7 @@ export type DiffOptions = {
   arrayKeyField: string;
   looseTypes: boolean;
   root: string;
+  include: string;
 };
 
 export const DEFAULT_OPTIONS: DiffOptions = {
@@ -53,6 +54,7 @@ export const DEFAULT_OPTIONS: DiffOptions = {
   arrayKeyField: '',
   looseTypes: false,
   root: '',
+  include: '',
 };
 
 export type ParseError = { message: string; pos: Pos };

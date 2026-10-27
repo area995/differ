@@ -11,6 +11,7 @@ Confronto semantico tra file chiave-valore (JSON, YAML) nel browser. I file non 
 - **Ignora ordine array**: abbina gli elementi per uguaglianza, o per un campo chiave (es. `name`)
 - **Tipi laschi**: `8080` uguale a `"8080"`
 - **Root**: path (es. `config`, `$.spec.template`, `users[name=alice]`) il cui valore viene usato al posto del documento nei file che lo contengono; utile per confrontare un file annidato con uno non annidato
+- **Includi**: path relativi alla root separati da virgola (es. `server, db.pool`): confronta solo quei sottoalberi
 
 ## Sviluppo
 
