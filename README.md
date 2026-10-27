@@ -13,6 +13,14 @@ Confronto semantico tra file chiave-valore (JSON, YAML) nel browser. I file non 
 - **Root**: path (es. `config`, `$.spec.template`, `users[name=alice]`) il cui valore viene usato al posto del documento nei file che lo contengono; utile per confrontare un file annidato con uno non annidato
 - **Includi**: path relativi alla root separati da virgola (es. `server, db.pool`): confronta solo quei sottoalberi
 
+## Navigare e riportare le modifiche
+
+- Click su una differenza: il nodo viene selezionato in entrambi gli editor e le righe si evidenziano nel gutter.
+- Pulsanti `A → B` / `B → A`: riportano la modifica nell'altro file toccando solo il testo di quel nodo
+  (valori, chiavi o elementi aggiunti/rimossi, righe di formattazione). Il risultato viene verificato prima di
+  applicarlo; se non è possibile farlo in modo sicuro compare un avviso. `Ctrl+Z` nell'editor annulla.
+- **Salva** su ogni pannello scarica il contenuto attuale.
+
 ## Sviluppo
 
 ```bash
