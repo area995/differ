@@ -1,0 +1,9 @@
+# Docker Desktop: `docker compose up --build`, then open http://localhost:8080
+# Port taken? `LEDGER_PORT=8081 docker compose up --build` (PowerShell: $env:LEDGER_PORT=8081 first)
+services:
+  ledger:
+    build: .
+    image: ledger:latest
+    ports:
+      - "${LEDGER_PORT:-8080}:8080"
+    restart: unless-stopped
