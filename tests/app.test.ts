@@ -356,4 +356,20 @@ describe('app with more than two files', () => {
     expect(items()).toEqual(['modificata$.a1 → 2']);
     expect(document.querySelector<HTMLElement>('#input-a .remove')!.hidden).toBe(true);
   });
+
+  it('shows the name of a loaded file on its card', async () => {
+    const name = document.querySelector<HTMLElement>('#input-a .file-name')!;
+    expect(name.hidden).toBe(true);
+
+    const drop = new Event('drop');
+    Object.defineProperty(drop, 'dataTransfer', { value: { files: [new File(['a: 5\n'], 'config.prod.yaml')] } });
+    document.getElementById('input-a')!.dispatchEvent(drop);
+
+    await vi.waitFor(() => expect(textareas()[0].value).toBe('a: 5\n'));
+    expect(name.hidden).toBe(false);
+    expect(name.textContent).toBe('config.prod.yaml');
+    expect(name.title).toBe('config.prod.yaml');
+    vi.advanceTimersByTime(300);
+    expect(document.querySelector('.pane-title')!.textContent).toBe('File A · config.prod.yaml');
+  });
 });

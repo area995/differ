@@ -52,8 +52,10 @@ export function createInputPanel(
   save.type = 'button';
   save.textContent = 'Salva';
   save.title = 'Scarica il contenuto attuale';
+  const fileName = el('span', 'file-name');
+  fileName.hidden = true;
   const head = el('div', 'panel-head');
-  head.append(heading, select, detected, fileButton, save);
+  head.append(heading, fileName, select, detected, fileButton, save);
 
   const baseInput = el('input');
   baseInput.type = 'radio';
@@ -69,7 +71,7 @@ export function createInputPanel(
   if (controls) {
     baseInput.addEventListener('change', () => controls.onBase());
     remove.addEventListener('click', () => controls.onRemove());
-    heading.after(baseLabel);
+    fileName.after(baseLabel);
     head.append(remove);
   }
 
@@ -135,6 +137,9 @@ export function createInputPanel(
     if (file.size > MAX_SIZE && !confirm(`${file.name} pesa ${mb} MB. Caricarlo comunque?`)) return;
     state.text = await file.text();
     state.fileName = file.name;
+    fileName.textContent = file.name;
+    fileName.title = file.name;
+    fileName.hidden = false;
     textarea.value = state.text;
     marks = noMarks();
     renderGutter(true);
