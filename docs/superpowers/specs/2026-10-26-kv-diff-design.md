@@ -38,6 +38,7 @@ all'utente di scegliere quali categorie di differenze evidenziare. Formati v1: J
 | Campo chiave array | vuoto | con "Ignora ordine array" attivo, abbina oggetti in array per valore di questo campo (es. `name`, `id`) |
 | Tipi laschi | off | scalari confrontati per rappresentazione stringa normalizzata (`8080` == `"8080"`) |
 | Root | vuoto | path del nodo da usare come radice del confronto nei file che lo contengono (vedi sotto) |
+| Includi | vuoto | path relativi alla root, separati da virgola o a capo: confronta solo quei sottoalberi (vedi sotto) |
 
 "Solo chiavi" = Differenze valori off. "Solo valori" = Differenze chiavi off.
 Con entrambe off, restano solo eventuali `whitespace` e `moved`.
@@ -59,6 +60,20 @@ cambia l'indentazione di tutte le righe.
 - Path nei risultati relativi alla root (`$` = nodo root); righe ed evidenziazioni restano quelle reali del file.
 - Modulo `core/select.ts`: `parsePath(text)`, `selectNode(node, path)` e `applyRoot(a, b, path)`.
   La selezione avviene nella UI prima di `diff()`, che resta invariato.
+
+### Sottoalberi inclusi
+
+Campo "Includi": lista di path (stessa sintassi di Root) relativi alla root già applicata a ciascun file,
+separati da virgola o a capo; le virgole dentro `[...]` o tra virgolette non separano. Vuoto = tutto.
+
+Il diff si calcola sull'intera root e poi si filtra (`core/filter.ts`, `filterEntries`). Restano:
+- le differenze con path dentro un sottoalbero incluso;
+- le differenze `added`, `removed`, `type` su un antenato di un path incluso (spiegano la sparizione del
+  sottoalbero, es. `removed $.db` per l'include `db.pool`). `whitespace` e `moved` sugli antenati sono scartati.
+
+Messaggi nella stessa area della root (una riga ciascuno): `Includi non valido: …` (errore, nessun diff) e
+`Includi: $.x non trovato né in A né in B` (avviso). Limite: i segmenti sono confrontati come appaiono nei
+path della lista, quindi con "Ignora ordine array" + campo chiave serve `users[name=alice]`, non `users[0]`.
 
 ## Architettura
 
@@ -106,7 +121,7 @@ type DiffEntry = {
 
 type DiffOptions = {
   keys: boolean; values: boolean; whitespace: boolean; keyOrder: boolean;
-  ignoreArrayOrder: boolean; arrayKeyField: string; looseTypes: boolean; root: string;
+  ignoreArrayOrder: boolean; arrayKeyField: string; looseTypes: boolean; root: string; include: string;
 };
 ```
 
@@ -195,6 +210,7 @@ alla riga giusta).
 - Pannello vuoto → nessun diff, nessun errore (stato neutro).
 - File > 5 MB → avviso e conferma prima del caricamento.
 - Root con sintassi non valida → messaggio "Root non valida" sotto le opzioni, nessun diff.
+- Includi con sintassi non valida → messaggio "Includi non valido" sotto le opzioni, nessun diff.
 
 ## Test
 
