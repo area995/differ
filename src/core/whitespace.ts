@@ -1,6 +1,6 @@
 /** Describes the whitespace-only differences between two lines (empty if none). */
 export function compareLines(a: string, b: string): string[] {
-  if (a === b) return [];
+  if (a === b || a.replace(/\s+/g, '') !== b.replace(/\s+/g, '')) return [];
   const details: string[] = [];
 
   const indentA = leading(a);
@@ -14,9 +14,7 @@ export function compareLines(a: string, b: string): string[] {
 
   const coreA = a.slice(indentA.length, a.length - trailA.length);
   const coreB = b.slice(indentB.length, b.length - trailB.length);
-  if (coreA !== coreB && coreA.replace(/\s+/g, '') === coreB.replace(/\s+/g, '')) {
-    details.push('spaziatura interna');
-  }
+  if (coreA !== coreB) details.push('spaziatura interna');
   return details;
 }
 

@@ -53,7 +53,7 @@ function makePlan(entry: DiffEntry, src: PatchDoc, tgt: PatchDoc, srcSide?: Side
       return replaceValue(entry.path, src, tgt, srcSide, tgtSide);
     case 'whitespace':
       if (!srcSide || !tgtSide || src.format !== tgt.format) throw new Unsupported();
-      return replaceLine(src, tgt, srcSide.range.start.line, tgtSide.range.start.line);
+      return replaceLine(entry.path, src, tgt, srcSide.range.start.line, tgtSide.range.start.line);
     case 'added':
     case 'removed':
       if (srcSide) return insert(entry.path, src, tgt, srcSide);
@@ -90,11 +90,15 @@ function replaceValue(path: Path, src: PatchDoc, tgt: PatchDoc, srcSide: Side, t
   return { edit: { start, end, text }, check: expectValue(tgt, path, srcSide.value) };
 }
 
-function replaceLine(src: PatchDoc, tgt: PatchDoc, srcLine: number, tgtLine: number): Plan {
+function replaceLine(path: Path, src: PatchDoc, tgt: PatchDoc, srcLine: number, tgtLine: number): Plan {
   const line = lineText(src.text, srcLine);
   const start = toOffset(tgt.text, { line: tgtLine, col: 1 });
   const end = start + lineText(tgt.text, tgtLine).length;
-  return { edit: { start, end, text: line }, check: (text) => lineText(text, tgtLine) === line };
+  const node = selectNode(tgt.node, path);
+  if (!node) throw new Unsupported();
+  // formatting only: the value must not change
+  const unchanged = expectValue(tgt, path, toPlain(node));
+  return { edit: { start, end, text: line }, check: (text) => lineText(text, tgtLine) === line && unchanged(text) };
 }
 
 function lineText(text: string, line: number): string {

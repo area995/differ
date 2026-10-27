@@ -190,6 +190,14 @@ describe('applyEntry limits', () => {
     });
   });
 
+  it('rejects whitespace copies that would change the structure', () => {
+    const a = doc('l:\n  - x: 1\n');
+    const b = doc('l:\n  - name: a\n    x: 1\n');
+    const line = (n: number) => ({ range: { start: { line: n, col: 1 }, end: { line: n, col: 1 } } });
+    const e: DiffEntry = { kind: 'whitespace', path: ['l', 0, 'x'], a: line(2), b: line(3) };
+    expect(applyEntry(e, 'aToB', a, b).ok).toBe(false);
+  });
+
   it('works on the real paths when the root is applied to one side only', () => {
     const fullA = node('config:\n  port: 1\n  host: a\n');
     const fullB = node('port: 2\nhost: a\n');

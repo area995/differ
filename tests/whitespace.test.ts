@@ -25,4 +25,8 @@ describe('compareLines', () => {
   it('ignores non-whitespace differences', () => {
     expect(compareLines('a: 1', 'a: 2')).toEqual([]);
   });
+
+  it('ignores lines that differ in more than whitespace', () => {
+    expect(compareLines('  - x: 1', '    x: 1')).toEqual([]);
+  });
 });
