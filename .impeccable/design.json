@@ -1,0 +1,486 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-27T14:58:51.696Z",
+  "title": "Design System: KV Diff",
+  "extensions": {
+    "colorMeta": {
+      "signal-blue": {
+        "role": "primary",
+        "displayName": "Signal Blue",
+        "canonical": "#3b6fd8",
+        "oklch": "oklch(56.3% 0.171 262)",
+        "dark": "#7aa2ff",
+        "tonalRamp": [
+          "oklch(15% 0.026 262)",
+          "oklch(26% 0.084 262)",
+          "oklch(38% 0.143 262)",
+          "oklch(49% 0.171 262)",
+          "oklch(61% 0.171 262)",
+          "oklch(72% 0.143 262)",
+          "oklch(84% 0.084 262)",
+          "oklch(95% 0.026 262)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#1d2330",
+        "oklch": "oklch(25.6% 0.026 265)",
+        "dark": "#e4e7ec",
+        "tonalRamp": [
+          "oklch(15% 0.004 265)",
+          "oklch(26% 0.013 265)",
+          "oklch(38% 0.022 265)",
+          "oklch(49% 0.026 265)",
+          "oklch(61% 0.026 265)",
+          "oklch(72% 0.022 265)",
+          "oklch(84% 0.013 265)",
+          "oklch(95% 0.004 265)"
+        ]
+      },
+      "slate-muted": {
+        "role": "neutral",
+        "displayName": "Slate Muted",
+        "canonical": "#667085",
+        "oklch": "oklch(54.4% 0.035 265)",
+        "dark": "#98a2b3",
+        "tonalRamp": [
+          "oklch(15% 0.005 265)",
+          "oklch(26% 0.017 265)",
+          "oklch(38% 0.029 265)",
+          "oklch(49% 0.035 265)",
+          "oklch(61% 0.035 265)",
+          "oklch(72% 0.029 265)",
+          "oklch(84% 0.017 265)",
+          "oklch(95% 0.005 265)"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "#ffffff",
+        "oklch": "oklch(100.0% 0.000 90)",
+        "dark": "#14171c",
+        "tonalRamp": [
+          "oklch(15% 0.000 90)",
+          "oklch(26% 0.000 90)",
+          "oklch(38% 0.000 90)",
+          "oklch(49% 0.000 90)",
+          "oklch(61% 0.000 90)",
+          "oklch(72% 0.000 90)",
+          "oklch(84% 0.000 90)",
+          "oklch(95% 0.000 90)"
+        ]
+      },
+      "bench-gray": {
+        "role": "neutral",
+        "displayName": "Bench Gray",
+        "canonical": "#f7f8fa",
+        "oklch": "oklch(97.9% 0.003 265)",
+        "dark": "#1b1f26",
+        "tonalRamp": [
+          "oklch(15% 0.000 265)",
+          "oklch(26% 0.001 265)",
+          "oklch(38% 0.002 265)",
+          "oklch(49% 0.003 265)",
+          "oklch(61% 0.003 265)",
+          "oklch(72% 0.002 265)",
+          "oklch(84% 0.001 265)",
+          "oklch(95% 0.000 265)"
+        ]
+      },
+      "hairline": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "#d9dde5",
+        "oklch": "oklch(89.7% 0.012 265)",
+        "dark": "#2c323c",
+        "tonalRamp": [
+          "oklch(15% 0.002 265)",
+          "oklch(26% 0.006 265)",
+          "oklch(38% 0.010 265)",
+          "oklch(49% 0.012 265)",
+          "oklch(61% 0.012 265)",
+          "oklch(72% 0.010 265)",
+          "oklch(84% 0.006 265)",
+          "oklch(95% 0.002 265)"
+        ]
+      },
+      "alarm-red": {
+        "role": "error",
+        "displayName": "Alarm Red",
+        "canonical": "#c42b2b",
+        "oklch": "oklch(53.8% 0.189 26)",
+        "dark": "#ff6b6b",
+        "tonalRamp": [
+          "oklch(15% 0.028 26)",
+          "oklch(26% 0.093 26)",
+          "oklch(38% 0.158 26)",
+          "oklch(49% 0.189 26)",
+          "oklch(61% 0.189 26)",
+          "oklch(72% 0.158 26)",
+          "oklch(84% 0.093 26)",
+          "oklch(95% 0.028 26)"
+        ]
+      },
+      "applied-gray": {
+        "role": "neutral",
+        "displayName": "Applied Gray",
+        "canonical": "#e3e6ea",
+        "oklch": "oklch(92.4% 0.006 255)",
+        "dark": "#2d323a",
+        "tonalRamp": [
+          "oklch(15% 0.001 255)",
+          "oklch(26% 0.003 255)",
+          "oklch(38% 0.005 255)",
+          "oklch(49% 0.006 255)",
+          "oklch(61% 0.006 255)",
+          "oklch(72% 0.005 255)",
+          "oklch(84% 0.003 255)",
+          "oklch(95% 0.001 255)"
+        ]
+      },
+      "added-mint": {
+        "role": "diff-tint",
+        "displayName": "Added Mint",
+        "canonical": "#e3f6e8",
+        "oklch": "oklch(95.5% 0.027 154)",
+        "dark": "#16351f",
+        "tonalRamp": [
+          "oklch(15% 0.004 154)",
+          "oklch(26% 0.013 154)",
+          "oklch(38% 0.023 154)",
+          "oklch(49% 0.027 154)",
+          "oklch(61% 0.027 154)",
+          "oklch(72% 0.023 154)",
+          "oklch(84% 0.013 154)",
+          "oklch(95% 0.004 154)"
+        ]
+      },
+      "added-green": {
+        "role": "diff-bar",
+        "displayName": "Added Green",
+        "canonical": "#2e9e50",
+        "oklch": "oklch(61.9% 0.152 149)",
+        "tonalRamp": [
+          "oklch(15% 0.023 149)",
+          "oklch(26% 0.075 149)",
+          "oklch(38% 0.127 149)",
+          "oklch(49% 0.152 149)",
+          "oklch(61% 0.152 149)",
+          "oklch(72% 0.127 149)",
+          "oklch(84% 0.075 149)",
+          "oklch(95% 0.023 149)"
+        ]
+      },
+      "removed-blush": {
+        "role": "diff-tint",
+        "displayName": "Removed Blush",
+        "canonical": "#fde7e7",
+        "oklch": "oklch(94.6% 0.024 18)",
+        "dark": "#3d1a1b",
+        "tonalRamp": [
+          "oklch(15% 0.004 18)",
+          "oklch(26% 0.012 18)",
+          "oklch(38% 0.020 18)",
+          "oklch(49% 0.024 18)",
+          "oklch(61% 0.024 18)",
+          "oklch(72% 0.020 18)",
+          "oklch(84% 0.012 18)",
+          "oklch(95% 0.004 18)"
+        ]
+      },
+      "removed-red": {
+        "role": "diff-bar",
+        "displayName": "Removed Red",
+        "canonical": "#d0393e",
+        "oklch": "oklch(57.3% 0.188 24)",
+        "tonalRamp": [
+          "oklch(15% 0.028 24)",
+          "oklch(26% 0.092 24)",
+          "oklch(38% 0.157 24)",
+          "oklch(49% 0.188 24)",
+          "oklch(61% 0.188 24)",
+          "oklch(72% 0.157 24)",
+          "oklch(84% 0.092 24)",
+          "oklch(95% 0.028 24)"
+        ]
+      },
+      "changed-cream": {
+        "role": "diff-tint",
+        "displayName": "Changed Cream",
+        "canonical": "#fff4cc",
+        "oklch": "oklch(96.6% 0.053 94)",
+        "dark": "#3a3212",
+        "tonalRamp": [
+          "oklch(15% 0.008 94)",
+          "oklch(26% 0.026 94)",
+          "oklch(38% 0.044 94)",
+          "oklch(49% 0.053 94)",
+          "oklch(61% 0.053 94)",
+          "oklch(72% 0.044 94)",
+          "oklch(84% 0.026 94)",
+          "oklch(95% 0.008 94)"
+        ]
+      },
+      "changed-ochre": {
+        "role": "diff-bar",
+        "displayName": "Changed Ochre",
+        "canonical": "#a87f00",
+        "tonalRamp": [
+          "oklch(15% 0.022 86)",
+          "oklch(26% 0.071 86)",
+          "oklch(38% 0.121 86)",
+          "oklch(49% 0.144 86)",
+          "oklch(61% 0.144 86)",
+          "oklch(72% 0.121 86)",
+          "oklch(84% 0.071 86)",
+          "oklch(95% 0.022 86)"
+        ],
+        "dark": "#c99a06"
+      },
+      "type-peach": {
+        "role": "diff-tint",
+        "displayName": "Type Peach",
+        "canonical": "#ffe6d1",
+        "oklch": "oklch(94.0% 0.039 62)",
+        "dark": "#3d2614",
+        "tonalRamp": [
+          "oklch(15% 0.006 62)",
+          "oklch(26% 0.019 62)",
+          "oklch(38% 0.033 62)",
+          "oklch(49% 0.039 62)",
+          "oklch(61% 0.039 62)",
+          "oklch(72% 0.033 62)",
+          "oklch(84% 0.019 62)",
+          "oklch(95% 0.006 62)"
+        ]
+      },
+      "type-orange": {
+        "role": "diff-bar",
+        "displayName": "Type Orange",
+        "canonical": "#c55a12",
+        "tonalRamp": [
+          "oklch(15% 0.025 48)",
+          "oklch(26% 0.081 48)",
+          "oklch(38% 0.137 48)",
+          "oklch(49% 0.164 48)",
+          "oklch(61% 0.164 48)",
+          "oklch(72% 0.137 48)",
+          "oklch(84% 0.081 48)",
+          "oklch(95% 0.025 48)"
+        ],
+        "dark": "#dd6b20"
+      },
+      "moved-mist": {
+        "role": "diff-tint",
+        "displayName": "Moved Mist",
+        "canonical": "#e1ecff",
+        "oklch": "oklch(94.1% 0.028 261)",
+        "dark": "#172a4a",
+        "tonalRamp": [
+          "oklch(15% 0.004 261)",
+          "oklch(26% 0.014 261)",
+          "oklch(38% 0.024 261)",
+          "oklch(49% 0.028 261)",
+          "oklch(61% 0.028 261)",
+          "oklch(72% 0.024 261)",
+          "oklch(84% 0.014 261)",
+          "oklch(95% 0.004 261)"
+        ]
+      },
+      "whitespace-fog": {
+        "role": "diff-tint",
+        "displayName": "Whitespace Fog",
+        "canonical": "#eef0f3",
+        "oklch": "oklch(95.4% 0.005 258)",
+        "dark": "#23272e",
+        "tonalRamp": [
+          "oklch(15% 0.001 258)",
+          "oklch(26% 0.002 258)",
+          "oklch(38% 0.004 258)",
+          "oklch(49% 0.005 258)",
+          "oklch(61% 0.005 258)",
+          "oklch(72% 0.004 258)",
+          "oklch(84% 0.002 258)",
+          "oklch(95% 0.001 258)"
+        ]
+      },
+      "whitespace-steel": {
+        "role": "diff-bar",
+        "displayName": "Whitespace Steel",
+        "canonical": "#7a8496",
+        "tonalRamp": [
+          "oklch(15% 0.004 262)",
+          "oklch(26% 0.014 262)",
+          "oklch(38% 0.024 262)",
+          "oklch(49% 0.029 262)",
+          "oklch(61% 0.029 262)",
+          "oklch(72% 0.024 262)",
+          "oklch(84% 0.014 262)",
+          "oklch(95% 0.004 262)"
+        ],
+        "dark": "#8a94a6"
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "App title only."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Section and pane headings."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Option labels, descriptions, notices."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Small buttons, tabs, chips, meta text."
+      },
+      "code": {
+        "displayName": "Code",
+        "purpose": "Editors, gutters, panes, trees, matrix: all data."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "line-flash",
+        "value": "outline 2px var(--fg) → transparent, 1.2s ease-out",
+        "purpose": "Marks the target line after jumping from a diff entry."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "diff-list-stack",
+        "value": "600px"
+      },
+      {
+        "name": "panes-stack",
+        "value": "900px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Small Button",
+      "kind": "button",
+      "refersTo": "button-small",
+      "description": "Apply, matrix action and tree-tool button; quiet until hovered.",
+      "html": "<button class=\"ds-btn-small\">A → B</button> <button class=\"ds-btn-small\" disabled>B → A</button>",
+      "css": ":host{--bg:#fff;--fg:#1d2330;--muted:#667085;--border:#d9dde5;--panel:#f7f8fa;--accent:#3b6fd8;--added:#e3f6e8;--added-bar:#2e9e50;--removed:#fde7e7;--removed-bar:#d0393e;--changed:#fff4cc;--changed-bar:#a87f00;--type:#ffe6d1;--type-bar:#c55a12;--moved:#e1ecff;--moved-bar:#3b6fd8;font-family:system-ui,-apple-system,\"Segoe UI\",sans-serif;color:var(--fg)} .ds-btn-small{padding:2px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--fg);font:inherit;font-size:.85rem;white-space:nowrap;cursor:pointer}.ds-btn-small:hover:not(:disabled){border-color:var(--accent)}.ds-btn-small:focus-visible{outline:2px solid var(--accent);outline-offset:1px}.ds-btn-small:disabled{opacity:.4;cursor:not-allowed}"
+    },
+    {
+      "name": "Icon Button",
+      "kind": "button",
+      "refersTo": "icon-button",
+      "description": "28px square icon-only button with aria-label and tooltip; trash variant hovers red.",
+      "html": "<button class=\"ds-icon-btn\" aria-label=\"Scarica\" title=\"Scarica\"><svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/><polyline points=\"7 10 12 15 17 10\"/><line x1=\"12\" x2=\"12\" y1=\"15\" y2=\"3\"/></svg></button> <button class=\"ds-icon-btn ds-remove\" aria-label=\"Rimuovi\" title=\"Rimuovi\"><svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 6h18\"/><path d=\"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6\"/><path d=\"M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\"/><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"/><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"/></svg></button>",
+      "css": ":host{--bg:#fff;--fg:#1d2330;--muted:#667085;--border:#d9dde5;--panel:#f7f8fa;--accent:#3b6fd8;--added:#e3f6e8;--added-bar:#2e9e50;--removed:#fde7e7;--removed-bar:#d0393e;--changed:#fff4cc;--changed-bar:#a87f00;--type:#ffe6d1;--type-bar:#c55a12;--moved:#e1ecff;--moved-bar:#3b6fd8;font-family:system-ui,-apple-system,\"Segoe UI\",sans-serif;color:var(--fg)} .ds-icon-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--fg);cursor:pointer}.ds-icon-btn:hover{border-color:var(--accent);color:var(--accent)}.ds-icon-btn.ds-remove:hover{border-color:var(--removed-bar);color:var(--removed-bar)}.ds-icon-btn:focus-visible{outline:2px solid var(--accent);outline-offset:1px}"
+    },
+    {
+      "name": "Add File Button",
+      "kind": "button",
+      "refersTo": "add-file-button",
+      "description": "Dashed slot affordance for adding another file.",
+      "html": "<button class=\"ds-add-file\">+ Aggiungi file</button>",
+      "css": ":host{--bg:#fff;--fg:#1d2330;--muted:#667085;--border:#d9dde5;--panel:#f7f8fa;--accent:#3b6fd8;--added:#e3f6e8;--added-bar:#2e9e50;--removed:#fde7e7;--removed-bar:#d0393e;--changed:#fff4cc;--changed-bar:#a87f00;--type:#ffe6d1;--type-bar:#c55a12;--moved:#e1ecff;--moved-bar:#3b6fd8;font-family:system-ui,-apple-system,\"Segoe UI\",sans-serif;color:var(--fg)} .ds-add-file{padding:4px 12px;border:1px dashed var(--border);border-radius:6px;background:transparent;color:var(--accent);font:inherit;cursor:pointer}.ds-add-file:hover{border-color:var(--accent)}.ds-add-file:focus-visible{outline:2px solid var(--accent);outline-offset:1px}"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "text-input",
+      "description": "Root / Includi option field inside the options bar.",
+      "html": "<label class=\"ds-opt\">Root <input class=\"ds-input\" type=\"text\" placeholder=\"$.spec.template\"></label>",
+      "css": ":host{--bg:#fff;--fg:#1d2330;--muted:#667085;--border:#d9dde5;--panel:#f7f8fa;--accent:#3b6fd8;--added:#e3f6e8;--added-bar:#2e9e50;--removed:#fde7e7;--removed-bar:#d0393e;--changed:#fff4cc;--changed-bar:#a87f00;--type:#ffe6d1;--type-bar:#c55a12;--moved:#e1ecff;--moved-bar:#3b6fd8;font-family:system-ui,-apple-system,\"Segoe UI\",sans-serif;color:var(--fg)} .ds-opt{display:inline-flex;align-items:center;gap:6px}.ds-input{padding:4px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--fg);font:inherit}.ds-input:focus-visible{outline:2px solid var(--accent);outline-offset:0;border-color:var(--accent)}"
+    },
+    {
+      "name": "Testo / Albero Tabs",
+      "kind": "nav",
+      "refersTo": "tab",
+      "description": "Top-rounded tab switch on each file card.",
+      "html": "<div class=\"ds-tabs\" role=\"tablist\"><button role=\"tab\" aria-selected=\"true\">Testo</button><button role=\"tab\" aria-selected=\"false\">Albero</button></div>",
+      "css": ":host{--bg:#fff;--fg:#1d2330;--muted:#667085;--border:#d9dde5;--panel:#f7f8fa;--accent:#3b6fd8;--added:#e3f6e8;--added-bar:#2e9e50;--removed:#fde7e7;--removed-bar:#d0393e;--changed:#fff4cc;--changed-bar:#a87f00;--type:#ffe6d1;--type-bar:#c55a12;--moved:#e1ecff;--moved-bar:#3b6fd8;font-family:system-ui,-apple-system,\"Segoe UI\",sans-serif;color:var(--fg)} .ds-tabs{display:flex;gap:2px}.ds-tabs button{padding:2px 12px;border:1px solid var(--border);border-radius:6px 6px 0 0;background:var(--panel);color:var(--muted);font:inherit;font-size:.85rem;cursor:pointer}.ds-tabs button[aria-selected=\"true\"]{background:var(--bg);color:var(--fg);font-weight:600}.ds-tabs button:hover{color:var(--fg)}.ds-tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}"
+    },
+    {
+      "name": "Diff Chips",
+      "kind": "chip",
+      "refersTo": "diff-chip",
+      "description": "Summary counts per difference kind: tint fill + 4px kind bar.",
+      "html": "<div class=\"ds-chips\"><span class=\"ds-chip ds-added\">3 aggiunte</span><span class=\"ds-chip ds-removed\">1 rimossa</span><span class=\"ds-chip ds-changed\">2 valori</span><span class=\"ds-chip ds-type\">1 tipo</span><span class=\"ds-chip ds-moved\">4 spostate</span></div>",
+      "css": ":host{--bg:#fff;--fg:#1d2330;--muted:#667085;--border:#d9dde5;--panel:#f7f8fa;--accent:#3b6fd8;--added:#e3f6e8;--added-bar:#2e9e50;--removed:#fde7e7;--removed-bar:#d0393e;--changed:#fff4cc;--changed-bar:#a87f00;--type:#ffe6d1;--type-bar:#c55a12;--moved:#e1ecff;--moved-bar:#3b6fd8;font-family:system-ui,-apple-system,\"Segoe UI\",sans-serif;color:var(--fg)} .ds-chips{display:flex;flex-wrap:wrap;gap:6px}.ds-chip{padding:2px 8px;border-left:4px solid;border-radius:4px;font-size:.85rem}.ds-added{background:var(--added);border-left-color:var(--added-bar)}.ds-removed{background:var(--removed);border-left-color:var(--removed-bar)}.ds-changed{background:var(--changed);border-left-color:var(--changed-bar)}.ds-type{background:var(--type);border-left-color:var(--type-bar)}.ds-moved{background:var(--moved);border-left-color:var(--moved-bar)}"
+    },
+    {
+      "name": "File Card",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "Bench-gray card with file-name pill; base card gets a Signal Blue border.",
+      "html": "<div class=\"ds-panel ds-base\"><div class=\"ds-head\"><span class=\"ds-pill\">values-prod.yaml</span><span class=\"ds-detected\">YAML</span></div><div class=\"ds-editor\"><pre class=\"ds-gutter\">1\n2\n3</pre><pre class=\"ds-code\">server:\n  port: 8080\n  host: api</pre></div></div>",
+      "css": ":host{--bg:#fff;--fg:#1d2330;--muted:#667085;--border:#d9dde5;--panel:#f7f8fa;--accent:#3b6fd8;--added:#e3f6e8;--added-bar:#2e9e50;--removed:#fde7e7;--removed-bar:#d0393e;--changed:#fff4cc;--changed-bar:#a87f00;--type:#ffe6d1;--type-bar:#c55a12;--moved:#e1ecff;--moved-bar:#3b6fd8;font-family:system-ui,-apple-system,\"Segoe UI\",sans-serif;color:var(--fg)} .ds-panel{padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--panel);max-width:360px}.ds-panel.ds-base{border-color:var(--accent)}.ds-head{display:flex;align-items:center;gap:8px;margin-bottom:6px}.ds-pill{padding:2px 10px;border:1px solid var(--border);border-radius:999px;background:var(--bg);font-size:.85rem;font-weight:600}.ds-detected{color:var(--muted);font-size:.85rem}.ds-editor{display:flex;border:1px solid var(--border);border-radius:4px;background:var(--bg);overflow:hidden}.ds-gutter,.ds-code{margin:0;padding:6px 8px;font:13px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace}.ds-gutter{background:var(--panel);color:var(--muted);text-align:right}"
+    },
+    {
+      "name": "Diff List",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "The ledger: one kind-tinted row per difference with path, description and apply actions.",
+      "html": "<ul class=\"ds-list\"><li class=\"ds-added\"><span>aggiunta</span><span class=\"ds-path\">$.db.pool</span><span>presente solo in B</span><span><button class=\"ds-b\">A → B</button></span></li><li class=\"ds-changed\"><span>valore</span><span class=\"ds-path\">$.server.port</span><span>8080 → 9090</span><span><button class=\"ds-b\">A → B</button></span></li></ul>",
+      "css": ":host{--bg:#fff;--fg:#1d2330;--muted:#667085;--border:#d9dde5;--panel:#f7f8fa;--accent:#3b6fd8;--added:#e3f6e8;--added-bar:#2e9e50;--removed:#fde7e7;--removed-bar:#d0393e;--changed:#fff4cc;--changed-bar:#a87f00;--type:#ffe6d1;--type-bar:#c55a12;--moved:#e1ecff;--moved-bar:#3b6fd8;font-family:system-ui,-apple-system,\"Segoe UI\",sans-serif;color:var(--fg)} .ds-list{margin:0;padding:0;list-style:none;border:1px solid var(--border);border-radius:8px;overflow:hidden}.ds-list li{display:grid;grid-template-columns:6em minmax(0,1fr) minmax(0,1.5fr) auto;align-items:center;gap:8px;padding:6px 10px;border-left:4px solid;cursor:pointer}.ds-list li+li{border-top:1px solid var(--border)}.ds-path{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere}.ds-added{background:var(--added);border-left-color:var(--added-bar)}.ds-changed{background:var(--changed);border-left-color:var(--changed-bar)}.ds-b{padding:2px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--fg);font:inherit;font-size:.85rem;cursor:pointer}.ds-b:hover{border-color:var(--accent)}.ds-b:focus-visible{outline:2px solid var(--accent);outline-offset:1px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Change Ledger",
+    "overview": "Every difference is an entry in a ledger. It has a kind, a color that says which kind, a path, a line number, and an action that copies it to the other file. The interface is the ledger's paper: neutral, ruled with hairlines, and quiet enough that the entries are what you read. Color is almost never decoration. A colored surface means \"this is a difference of this kind\", and the six kind colors stay consistent across chips, list rows, editor lines, tree nodes and matrix cells.\n\nThe tone is precise but friendly. Layouts are dense, fonts are the system's own, and the chrome sticks to the conventions engineers already know from editors and diff viewers. Softer touches (gently rounded corners, a pill around each loaded file name, a dashed \"+ Aggiungi file\" affordance) keep a tool built for repeated expert use from feeling hostile. Light and dark themes both ship, following the OS through `prefers-color-scheme`.",
+    "keyCharacteristics": [
+      "Flat, bordered surfaces on two neutral levels (paper and bench gray). No shadows.",
+      "One interactive accent, Signal Blue, for selection, focus, the base file and links.",
+      "A closed set of six difference-kind color pairs (a tint plus a bar), used everywhere a difference appears.",
+      "System UI font for chrome, system monospace for anything that is data.",
+      "Small, compact controls (2px × 8px padding on secondary buttons, 28px icon buttons)."
+    ],
+    "rules": [
+      {
+        "name": "The Ledger Color Rule",
+        "section": "colors",
+        "body": "A kind color appears only where that kind of difference appears. Never use Added Green for \"success\", Changed Ochre for \"warning\" or Removed Red for \"delete\" in unrelated chrome. The six pairs are reserved vocabulary."
+      },
+      {
+        "name": "The Tint-Plus-Bar Rule",
+        "section": "colors",
+        "body": "A difference is always shown as a pale tint with a 4px saturated left bar. Never a full-saturation fill, and never the tint without the bar."
+      },
+      {
+        "name": "The One Accent Rule",
+        "section": "colors",
+        "body": "Signal Blue is the only interactive color. Selection, focus, the base file and hover all use it. Don't add a second accent."
+      },
+      {
+        "name": "The Data Is Mono Rule",
+        "section": "typography",
+        "body": "Anything the user could copy into a file or a path field (keys, values, paths, line content) is set in monospace. Labels about data are set in the sans."
+      },
+      {
+        "name": "The Flat Ledger Rule",
+        "section": "elevation",
+        "body": "Surfaces never cast shadows. If something needs emphasis, change its border or tint, not its elevation."
+      }
+    ],
+    "dos": [
+      "Do show every difference as a tint plus a 4px left bar in that kind's ledger pair, in every view (chip, row, line, cell).",
+      "Do use Signal Blue as the only signal for selection, focus, hover and the base file.",
+      "Do set keys, values, paths and file content in system monospace at 13px.",
+      "Do keep surfaces flat: Bench Gray panels holding Paper working surfaces, outlined with 1px Hairline borders.",
+      "Do give icon-only buttons an `aria-label` and a tooltip.",
+      "Do define every new color as a CSS custom property with a dark-theme value under `prefers-color-scheme: dark`."
+    ],
+    "donts": [
+      "Don't use the ledger kind colors for generic success, warning or danger states in chrome.",
+      "Don't add drop shadows or elevation. Emphasize with borders, tints and outlines.",
+      "Don't introduce a second accent color or a web font. The system font stack is the identity.",
+      "Don't set data (paths, keys, values) in the sans or as prose.",
+      "Don't use full-saturation fills for differences. Tints carry the area and bars carry the signal."
+    ]
+  }
+}
