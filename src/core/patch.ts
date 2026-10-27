@@ -1,5 +1,18 @@
 import { stringify } from 'yaml';
-import { toPlain, type DiffEntry, type Entry, type Format, type Node, type Path, type Range, type Side } from './model';
+import {
+  toPlain,
+  type ArrayNode,
+  type DiffEntry,
+  type Entry,
+  type Format,
+  type Node,
+  type ObjectNode,
+  type Path,
+  type PathSeg,
+  type Pos,
+  type Range,
+  type Side,
+} from './model';
 import { parse } from './parse';
 import { selectNode } from './select';
 import { indentAt, lineEnd, lineStart, toOffset } from './text';
@@ -24,6 +37,43 @@ export function patchSupport(entry: DiffEntry, a: PatchDoc, b: PatchDoc, ignoreA
     return 'Non disponibile con "Ignora ordine array" su elementi per indice';
   }
   return null;
+}
+
+/**
+ * Where the entry is in each document. A side missing the node gets the point where it would be
+ * inserted, so both editors can always be positioned.
+ */
+export function locateEntry(entry: DiffEntry, a: PatchDoc, b: PatchDoc): { a: Range; b: Range } {
+  return {
+    a: entry.a?.range ?? insertionPoint(entry.path, b, a),
+    b: entry.b?.range ?? insertionPoint(entry.path, a, b),
+  };
+}
+
+function insertionPoint(path: Path, src: PatchDoc, tgt: PatchDoc): Range {
+  const parentPath = path.slice(0, -1);
+  const key = path[path.length - 1];
+  const parent = selectNode(tgt.node, parentPath);
+  const srcParent = selectNode(src.node, parentPath);
+  if (!parent || key === undefined) return point(tgt.node.range.start);
+  let anchorEnd: Pos | undefined;
+  let first: Pos | undefined;
+  if (parent.kind === 'object' && srcParent?.kind === 'object' && typeof key === 'string') {
+    anchorEnd = objectAnchor(parent, srcParent, key)?.value.range.end;
+    first = parent.entries[0]?.keyRange.start;
+  } else if (parent.kind === 'array') {
+    anchorEnd = parent.items[arraySlot(parent, key) - 1]?.range.end;
+    first = parent.items[0]?.range.start;
+  }
+  // block containers: the line the node would occupy; flow ones: right after the previous item
+  const flow = tgt.format === 'json' || isFlow(tgt.text, parent);
+  if (anchorEnd) return point(flow ? anchorEnd : { line: anchorEnd.line + 1, col: 1 });
+  if (first) return point(flow ? first : { line: first.line, col: 1 });
+  return point(parent.range.start);
+}
+
+function point(pos: Pos): Range {
+  return { start: pos, end: pos };
 }
 
 /** Copies the difference described by `entry` from one document to the other, touching only that node. */
@@ -119,9 +169,7 @@ function insert(path: Path, src: PatchDoc, tgt: PatchDoc, srcSide: Side): Plan {
   if (parent.kind === 'object' && srcParent.kind === 'object' && typeof key === 'string') {
     const index = srcParent.entries.findIndex((e) => e.key === key);
     if (index < 0) throw new Unsupported();
-    const inTarget = new Map(parent.entries.map((e) => [e.key, e]));
-    let anchor: Entry | undefined;
-    for (let i = index - 1; i >= 0 && !anchor; i--) anchor = inTarget.get(srcParent.entries[i].key);
+    const anchor = objectAnchor(parent, srcParent, key);
     const first = parent.entries[0];
     const edit = flow
       ? insertFlow(src, tgt, parent.range, anchor?.value.range.end, first?.keyRange, srcParent.entries[index], srcSide)
@@ -130,7 +178,7 @@ function insert(path: Path, src: PatchDoc, tgt: PatchDoc, srcSide: Side): Plan {
   }
 
   if (parent.kind === 'array' && srcParent.kind === 'array') {
-    const at = typeof key === 'number' ? Math.min(key, parent.items.length) : parent.items.length;
+    const at = arraySlot(parent, key);
     const anchor = parent.items[at - 1];
     const first = parent.items[0];
     const edit = flow
@@ -139,6 +187,22 @@ function insert(path: Path, src: PatchDoc, tgt: PatchDoc, srcSide: Side): Plan {
     return { edit, check: expectValue(tgt, [...parentPath, at], srcSide.value) };
   }
   throw new Unsupported();
+}
+
+/** The entry of `parent` after which the source key goes: its closest predecessor in source order. */
+function objectAnchor(parent: ObjectNode, srcParent: ObjectNode, key: string): Entry | undefined {
+  const index = srcParent.entries.findIndex((e) => e.key === key);
+  const inTarget = new Map(parent.entries.map((e) => [e.key, e]));
+  for (let i = index - 1; i >= 0; i--) {
+    const anchor = inTarget.get(srcParent.entries[i].key);
+    if (anchor) return anchor;
+  }
+  return undefined;
+}
+
+/** Index at which an item goes: same position as in the source, or the end when matched by field. */
+function arraySlot(parent: ArrayNode, key: PathSeg): number {
+  return typeof key === 'number' ? Math.min(key, parent.items.length) : parent.items.length;
 }
 
 function insertBlockEntry(

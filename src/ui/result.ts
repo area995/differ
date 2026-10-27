@@ -1,4 +1,4 @@
-import { formatPath, type DiffEntry, type DiffKind } from '../core/model';
+import { formatPath, type DiffEntry, type DiffKind, type Range } from '../core/model';
 import type { Direction } from '../core/patch';
 import { el } from './dom';
 
@@ -27,7 +27,8 @@ export type ResultActions = {
   /** Why the entry cannot be applied, or null. */
   support(e: DiffEntry): string | null;
   apply(e: DiffEntry, direction: Direction): void;
-  select(e: DiffEntry): void;
+  /** Called when an entry is clicked; returns where it is (or would be) in each file. */
+  select(e: DiffEntry): { a: Range; b: Range };
 };
 
 export type ResultInput = { textA: string; textB: string; entries: DiffEntry[]; actions?: ResultActions };
@@ -128,9 +129,9 @@ function list(entries: DiffEntry[], paneA: HTMLElement, paneB: HTMLElement, acti
     li.append(kind, path, desc);
     if (actions) li.append(applyButtons(e, actions));
     li.addEventListener('click', () => {
-      if (e.a) reveal(paneA, e.a.range.start.line);
-      if (e.b) reveal(paneB, e.b.range.start.line);
-      actions?.select(e);
+      const at = actions?.select(e) ?? { a: e.a?.range, b: e.b?.range };
+      if (at.a) reveal(paneA, at.a.start.line);
+      if (at.b) reveal(paneB, at.b.start.line);
     });
     ul.append(li);
   }
@@ -156,10 +157,12 @@ function applyButtons(e: DiffEntry, actions: ResultActions): HTMLElement {
 }
 
 function reveal(pane: HTMLElement, line: number): void {
-  const row = pane.querySelector<HTMLElement>(`[data-line="${line}"]`);
+  // an insertion point can be one line past the end of the text
+  const row =
+    pane.querySelector<HTMLElement>(`[data-line="${line}"]`) ?? pane.querySelector<HTMLElement>('.line:last-child');
   if (!row) return;
   pane.scrollTop = row.offsetTop - pane.clientHeight / 2;
-  row.classList.remove('flash');
+  pane.querySelectorAll('.flash').forEach((r) => r.classList.remove('flash'));
   void row.offsetWidth; // restart the animation
   row.classList.add('flash');
 }

@@ -12,7 +12,7 @@ import {
   type Path,
 } from '../core/model';
 import { parse } from '../core/parse';
-import { applyEntry, patchSupport, type Direction, type PatchDoc } from '../core/patch';
+import { applyEntry, locateEntry, patchSupport, type Direction, type PatchDoc } from '../core/patch';
 import { applyRoot, parsePath, parsePathList, selectNode, type Scoped } from '../core/select';
 import { el } from './dom';
 import { createInputPanel, type InputState } from './input';
@@ -101,8 +101,10 @@ function run(): void {
       apply: (e, direction) => applyChange(e, direction, docA, docB),
       select: (e) => {
         showNotice(null);
-        panelA.reveal(e.a?.range ?? null);
-        panelB.reveal(e.b?.range ?? null);
+        const at = locateEntry(e, docA, docB);
+        panelA.reveal(at.a);
+        panelB.reveal(at.b);
+        return at;
       },
     },
   });

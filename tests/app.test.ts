@@ -180,6 +180,28 @@ describe('app', () => {
     expect(document.querySelector('#input-b .gutter .cur')?.textContent).toBe('2');
   });
 
+  it('positions both files also for added and removed nodes', () => {
+    type(0, 'a: 1\nb: 2\n');
+    type(1, 'a: 1\nc: 3\n');
+    expect(items()).toEqual(['rimossa$.b2', 'aggiunta$.c3']);
+    const [ta, tb] = textareas();
+    const list = () => document.querySelectorAll<HTMLElement>('.diff-list li');
+    const flashing = (side: string) =>
+      document.querySelector(`.pane[data-side="${side}"] .flash`)?.getAttribute('data-line');
+
+    list()[0].click(); // b only in A: B goes where b would be
+    expect(selected(ta)).toBe('b: 2');
+    expect(tb.selectionStart).toBe(5);
+    expect(document.querySelector('#input-b .gutter .cur')?.textContent).toBe('2');
+    expect([flashing('A'), flashing('B')]).toEqual(['2', '2']);
+
+    list()[1].click(); // c only in B, right after a: A goes where B → A would insert it
+    expect(selected(tb)).toBe('c: 3');
+    expect(ta.selectionStart).toBe(5);
+    expect(document.querySelector('#input-a .gutter .cur')?.textContent).toBe('2');
+    expect([flashing('A'), flashing('B')]).toEqual(['2', '2']);
+  });
+
   it('applies a difference in either direction', () => {
     type(0, 'a: 1\nb: 2\n');
     type(1, 'a: 1\nb: 3\nc: 4\n');

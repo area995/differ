@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { diff } from '../src/core/diff';
 import { DEFAULT_OPTIONS, formatPath, type DiffEntry, type DiffOptions, type Format } from '../src/core/model';
-import { applyEntry, patchSupport, type Direction, type PatchDoc } from '../src/core/patch';
+import { applyEntry, locateEntry, patchSupport, type Direction, type PatchDoc } from '../src/core/patch';
 import { applyRoot } from '../src/core/select';
 import { node } from './helpers';
 
@@ -206,6 +206,42 @@ describe('applyEntry limits', () => {
     const b: PatchDoc = { text: 'port: 2\nhost: a\n', format: 'yaml', node: scope.b, rootPath: [] };
     expect(patched(a, b, 'changed $.port', 'aToB')).toBe('port: 1\nhost: a\n');
     expect(patched(a, b, 'changed $.port', 'bToA')).toBe('config:\n  port: 2\n  host: a\n');
+  });
+});
+
+describe('locateEntry', () => {
+  const at = (line: number, col: number) => ({ start: { line, col }, end: { line, col } });
+
+  it('keeps both ranges when the node exists on both sides', () => {
+    const a = doc('a: 1\n');
+    const b = doc('a: 2\n');
+    const e = entry(a, b, 'changed $.a');
+    expect(locateEntry(e, a, b)).toEqual({ a: e.a!.range, b: e.b!.range });
+  });
+
+  it('points the missing side at the line where the node would be inserted', () => {
+    const a = doc('a: 1\nb: 2\nc: 3\n');
+    const b = doc('a: 1\nc: 3\n');
+    expect(locateEntry(entry(a, b, 'removed $.b'), a, b).b).toEqual(at(2, 1));
+    expect(locateEntry(entry(b, a, 'added $.b'), b, a).a).toEqual(at(2, 1));
+  });
+
+  it('points at the first entry when nothing precedes the node', () => {
+    const a = doc('z: 0\na: 1\n');
+    const b = doc('a: 1\n');
+    expect(locateEntry(entry(a, b, 'removed $.z'), a, b).b).toEqual(at(1, 1));
+  });
+
+  it('points after the previous item in flow containers', () => {
+    const a = doc('{"x": 1, "y": 2}', 'json');
+    const b = doc('{"x": 1}', 'json');
+    expect(locateEntry(entry(a, b, 'removed $.y'), a, b).b).toEqual(at(1, 8));
+  });
+
+  it('points at sequence positions', () => {
+    const a = doc('l:\n  - a\n  - b\n');
+    const b = doc('l:\n  - a\n');
+    expect(locateEntry(entry(a, b, 'removed $.l[1]'), a, b).b).toEqual(at(3, 1));
   });
 });
 
