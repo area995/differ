@@ -143,6 +143,21 @@ selezionata mostra una barra azioni: `Base → File X`, `File X → Base` (ripor
 `Base → tutti` (riporta il valore della base in ogni file che differisce direttamente su quel path); pulsanti
 disabilitati con motivo come nella vista a coppie (anche per celle uguali o con differenza solo ereditata).
 
+### Albero, selettore Includi e icone
+
+**Card.** Due schede `Testo | Albero`. L'albero (sola lettura) mostra il documento caricato con nodi
+comprimibili (aperti di default i primi due livelli), pulsanti "Espandi tutto" / "Comprimi tutto"; lo stato di
+apertura resta tra un ricalcolo e l'altro. Click su un nodo: torna a Testo con il nodo selezionato.
+
+**Includi.** Pulsante "Scegli" accanto al campo: albero con checkbox dell'unione delle chiavi di tutti i file
+(sotto la root, `core/union.ts`), con nota "solo in A, C" per i nodi non presenti ovunque. Spuntare un nodo lo
+aggiunge agli include (i discendenti risultano inclusi); il campo testo resta e si sincronizza nei due sensi.
+Elementi di array come `[i]`, o `[campo=valore]` con "Ignora ordine array" + campo chiave.
+
+**Icone.** SVG inline stile Lucide (MIT) per rimuovi (cestino) e salva (download), con `aria-label` e tooltip.
+
+Componente albero condiviso (`ui/tree.ts`).
+
 ## Architettura
 
 ```
