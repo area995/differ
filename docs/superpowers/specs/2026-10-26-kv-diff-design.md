@@ -75,6 +75,43 @@ Messaggi nella stessa area della root (una riga ciascuno): `Includi non valido: 
 `Includi: $.x non trovato né in A né in B` (avviso). Limite: i segmenti sono confrontati come appaiono nei
 path della lista, quindi con "Ignora ordine array" + campo chiave serve `users[name=alice]`, non `users[0]`.
 
+### Navigazione e riporto delle modifiche
+
+**Selezione.** Click su una voce della lista: oltre allo scroll dei pannelli risultato, in entrambi gli editor
+di input il nodo viene selezionato e scrollato in vista, e i numeri di riga coinvolti si evidenziano nel gutter
+(il browser mostra il cursore solo nel campo con focus; il focus resta sulla lista).
+
+**Riporto.** Ogni voce ha i pulsanti `A → B` e `B → A`:
+
+| Tipo | `A → B` | `B → A` |
+|---|---|---|
+| changed / type | valore di A sostituisce quello di B | viceversa |
+| removed (solo in A) | inserisce in B | elimina da A |
+| added (solo in B) | elimina da B | inserisce in A |
+| whitespace | riga di A sostituisce riga di B (solo stesso formato) | viceversa |
+| moved | non disponibile | non disponibile |
+
+Disabilitati (con motivo nel tooltip) per `moved`, `whitespace` tra formati diversi e, con "Ignora ordine array",
+per path con indici (gli indici dei due lati non coincidono).
+
+Modifica chirurgica sul testo (`core/patch.ts`): cambia solo la porzione del nodo; il resto del file resta
+identico. Stesso formato: si riusa il testo sorgente (quoting, stile) reindentato alla posizione di destinazione.
+Formati diversi: JSON via `JSON.stringify` (indentato se il contenitore è su più righe); YAML con scalari
+quotati se serve, collezioni flow dentro contenitori flow, a blocco altrove. Inserimento dopo la chiave/elemento
+precedente (nell'ordine del sorgente) presente nella destinazione, altrimenti in testa; gli elementi di array
+alla stessa posizione (o in coda se abbinati per campo). Eliminazione di righe intere o della porzione inline
+con la virgola adiacente.
+
+Dopo ogni modifica il file viene riparsato e si verifica che il nodo coincida col sorgente (o sia sparito).
+Se la verifica fallisce non si applica nulla e compare "Impossibile riportare automaticamente questa modifica".
+Root/Includi: i path vengono riportati a quelli reali di ciascun file.
+
+La modifica passa dall'editor (`execCommand('insertText')` dove disponibile) così Ctrl+Z la annulla.
+Pulsante **Salva** per pannello: scarica il testo corrente (nome file originale, oppure `file-a.<formato>`).
+
+Fuori scope: riporto di chiavi spostate, eliminazione/inserimento della prima chiave di un elemento compatto
+YAML (`- name: x`, rifiutato dalla verifica), "applica tutte".
+
 ## Architettura
 
 ```
