@@ -63,8 +63,8 @@ export function renderResult(root: HTMLElement, input: ResultInput | null): void
 }
 
 export function describeEntry(e: DiffEntry): string {
-  const va = show(e.a?.value);
-  const vb = show(e.b?.value);
+  const va = formatValue(e.a?.value);
+  const vb = formatValue(e.b?.value);
   switch (e.kind) {
     case 'added':
       return vb;
@@ -183,7 +183,8 @@ function reveal(pane: HTMLElement, line: number): void {
   row.classList.add('flash');
 }
 
-function show(v: unknown): string {
+/** Short JSON rendering of a value for lists and tables. */
+export function formatValue(v: unknown): string {
   if (v === undefined) return '';
   const s = JSON.stringify(v);
   return s.length > 80 ? `${s.slice(0, 77)}…` : s;

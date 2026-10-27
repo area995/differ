@@ -12,7 +12,10 @@ export type InputPanel = {
   reveal(range: Range | null): void;
   /** Applies an edit through the editor, so that the browser can undo it, and selects the new text. */
   replace(edit: Edit): void;
+  setControls(state: { base: boolean; removable: boolean }): void;
 };
+
+export type PanelControls = { onBase(): void; onRemove(): void };
 
 const MAX_SIZE = 5 * 1024 * 1024;
 
@@ -20,6 +23,7 @@ export function createInputPanel(
   root: HTMLElement,
   title: string,
   onChange: (state: InputState) => void,
+  controls?: PanelControls,
 ): InputPanel {
   const state: InputState = { text: '', choice: 'auto' };
   let format: Format | null = null;
@@ -50,6 +54,24 @@ export function createInputPanel(
   save.title = 'Scarica il contenuto attuale';
   const head = el('div', 'panel-head');
   head.append(heading, select, detected, fileButton, save);
+
+  const baseInput = el('input');
+  baseInput.type = 'radio';
+  baseInput.name = 'base';
+  const baseLabel = el('label', 'base-pick');
+  baseLabel.title = 'Confronta gli altri file con questo';
+  baseLabel.append(baseInput, 'Base');
+  const remove = el('button', 'remove');
+  remove.type = 'button';
+  remove.textContent = '×';
+  remove.title = 'Rimuovi questo file dal confronto';
+  remove.hidden = true;
+  if (controls) {
+    baseInput.addEventListener('change', () => controls.onBase());
+    remove.addEventListener('click', () => controls.onRemove());
+    heading.after(baseLabel);
+    head.append(remove);
+  }
 
   const gutter = el('pre', 'gutter');
   const textarea = el('textarea');
@@ -182,6 +204,12 @@ export function createInputPanel(
       const lineHeight = parseFloat(getComputedStyle(textarea).lineHeight) || 19.5;
       textarea.scrollTop = Math.max(0, (range.start.line - 1) * lineHeight - textarea.clientHeight / 2);
       syncScroll();
+    },
+
+    setControls({ base, removable }) {
+      baseInput.checked = base;
+      root.classList.toggle('is-base', base);
+      remove.hidden = !removable;
     },
 
     replace(edit) {

@@ -56,8 +56,8 @@ beforeAll(async () => {
   vi.useFakeTimers();
   document.body.innerHTML = `
     <section id="options"></section>
-    <div id="input-a"></div>
-    <div id="input-b"></div>
+    <section id="inputs"></section>
+    <button id="add-file"></button>
     <section id="result"></section>`;
   await import('../src/ui/main');
 });
@@ -280,5 +280,80 @@ describe('app', () => {
     expect(click).toHaveBeenCalledOnce();
     expect(await created[0].text()).toBe('x: 1\n');
     click.mockRestore();
+  });
+});
+
+describe('app with more than two files', () => {
+  const headers = () => [...document.querySelectorAll('.matrix th')].map((th) => th.textContent);
+  const rows = () =>
+    [...document.querySelectorAll('.matrix tbody tr')].map((tr) =>
+      [...tr.querySelectorAll('td')].map((td) => td.textContent),
+    );
+  const cell = (row: number, column: number) =>
+    document.querySelectorAll('.matrix tbody tr')[row].querySelectorAll<HTMLElement>('td')[column];
+  const action = (label: string) =>
+    [...document.querySelectorAll<HTMLButtonElement>('.matrix-actions button')].find((b) => b.textContent === label)!;
+  const run = (button: HTMLButtonElement) => {
+    button.click();
+    vi.advanceTimersByTime(300);
+  };
+
+  it('shows a matrix against the base when a third file is added', () => {
+    type(0, 'a: 1\nb: 2\n');
+    type(1, 'a: 1\nb: 3\n');
+    document.getElementById('add-file')!.click();
+    expect(textareas()).toHaveLength(3);
+    type(2, 'a: 9\nb: 2\n');
+
+    expect(document.querySelector('.pane')).toBeNull();
+    expect(headers()).toEqual(['Path', 'File A (base)', 'File B', 'File C']);
+    expect(rows()).toEqual([
+      ['$.a', '1', '1', '9'],
+      ['$.b', '2', '3', '2'],
+    ]);
+    expect(cell(0, 3).className).toContain('d-changed');
+    expect(document.querySelector('.matrix-summary')!.textContent).toBe('File B: 1 differenzeFile C: 1 differenze');
+  });
+
+  it('positions the editors and applies changes from a cell', () => {
+    cell(0, 3).click();
+    expect(selected(textareas()[0])).toBe('1');
+    expect(selected(textareas()[2])).toBe('9');
+
+    run(action('Base → File C'));
+    expect(textareas()[2].value).toBe('a: 1\nb: 2\n');
+    expect(rows()).toEqual([['$.b', '2', '3', '2']]);
+
+    cell(0, 2).click();
+    expect(action('Base → File B').disabled).toBe(false);
+    run(action('File B → Base'));
+    expect(textareas()[0].value).toBe('a: 1\nb: 3\n');
+    expect(rows()).toEqual([['$.b', '3', '3', '2']]);
+
+    cell(0, 2).click();
+    expect(action('Base → File B').disabled).toBe(true);
+    run(action('Base → tutti'));
+    expect(textareas()[2].value).toBe('a: 1\nb: 3\n');
+    expect(document.querySelector('.equal')).not.toBeNull();
+  });
+
+  it('lets any file be the base', () => {
+    type(1, 'a: 2\nb: 3\n');
+    document.querySelector<HTMLInputElement>('#input-b .base-pick input')!.click();
+    vi.advanceTimersByTime(300);
+    expect(headers()).toEqual(['Path', 'File B (base)', 'File A', 'File C']);
+    expect(rows()).toEqual([['$.a', '2', '1', '1']]);
+    document.querySelector<HTMLInputElement>('#input-a .base-pick input')!.click();
+    vi.advanceTimersByTime(300);
+  });
+
+  it('goes back to the pair view when a file is removed', () => {
+    expect(document.querySelector('#input-a .remove')).not.toBeNull();
+    document.querySelector<HTMLButtonElement>('#input-c .remove')!.click();
+    vi.advanceTimersByTime(300);
+    expect(textareas()).toHaveLength(2);
+    expect(document.querySelector('.matrix')).toBeNull();
+    expect(items()).toEqual(['modificata$.a1 → 2']);
+    expect(document.querySelector<HTMLElement>('#input-a .remove')!.hidden).toBe(true);
   });
 });
