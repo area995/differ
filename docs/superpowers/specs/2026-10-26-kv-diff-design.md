@@ -78,7 +78,7 @@ path della lista, quindi con "Ignora ordine array" + campo chiave serve `users[n
 ### Navigazione e riporto delle modifiche
 
 **Selezione.** Click su una voce della lista: in entrambi gli editor e in entrambi i pannelli risultato
-di input il nodo viene selezionato e scrollato in vista, e i numeri di riga coinvolti si evidenziano nel gutter
+il nodo viene selezionato e scrollato in vista, e i numeri di riga coinvolti si evidenziano nel gutter
 (il browser mostra il cursore solo nel campo con focus; il focus resta sulla lista).
 Se il nodo manca in un file (aggiunta/rimozione), quel file viene posizionato dove il nodo verrebbe inserito
 (stessa regola del riporto): la riga dopo l'elemento precedente nei contenitori a blocco, subito dopo
