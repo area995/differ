@@ -37,9 +37,22 @@ all'utente di scegliere quali categorie di differenze evidenziare. Formati v1: J
 | Ignora ordine array | off | gli elementi degli array vengono abbinati senza considerare l'indice |
 | Campo chiave array | vuoto | con "Ignora ordine array" attivo, abbina oggetti in array per valore di questo campo (es. `name`, `id`) |
 | Tipi laschi | off | scalari confrontati per rappresentazione stringa normalizzata (`8080` == `"8080"`) |
+| Root | vuoto | path del nodo da usare come radice del confronto in entrambi i file (vedi sotto) |
 
 "Solo chiavi" = Differenze valori off. "Solo valori" = Differenze chiavi off.
 Con entrambe off, restano solo eventuali `whitespace` e `moved`.
+
+### Root del confronto
+
+Campo di testo nella barra opzioni. Vuoto = documento intero. Lo stesso path si applica ad A e B
+e il diff confronta solo i due sottoalberi.
+
+- Sintassi = quella dei path mostrati nella lista differenze (copiabili): `$` iniziale opzionale,
+  `.chiave`, `[0]`, `["chiave.con.punti"]`, `[campo=valore]` (elemento di array il cui campo vale `valore`).
+  `server.config` equivale a `$.server.config`. Dopo un punto è ammesso qualsiasi carattere tranne `.`, `[`, `]`.
+- Path nei risultati relativi alla root (`$` = nodo root); righe ed evidenziazioni restano quelle reali del file.
+- Modulo `core/select.ts`: `parsePath(text)` e `selectNode(node, path)`. La selezione avviene nella UI prima
+  di `diff()`, che resta invariato.
 
 ## Architettura
 
@@ -87,7 +100,7 @@ type DiffEntry = {
 
 type DiffOptions = {
   keys: boolean; values: boolean; whitespace: boolean; keyOrder: boolean;
-  ignoreArrayOrder: boolean; arrayKeyField: string; looseTypes: boolean;
+  ignoreArrayOrder: boolean; arrayKeyField: string; looseTypes: boolean; root: string;
 };
 ```
 
@@ -175,6 +188,8 @@ alla riga giusta).
   nessun diff calcolato.
 - Pannello vuoto → nessun diff, nessun errore (stato neutro).
 - File > 5 MB → avviso e conferma prima del caricamento.
+- Root con sintassi non valida → messaggio "Root non valida" sotto le opzioni, nessun diff.
+- Root non trovata → messaggio sotto le opzioni (es. "Root $.server.x non trovata in B"), nessun diff.
 
 ## Test
 
@@ -192,4 +207,4 @@ alla riga giusta).
 
 Altri formati (TOML, .properties, INI, XML — il modello comune li rende aggiungibili),
 export del report, URL condivisibili, editor con syntax highlighting, scroll sincronizzato,
-YAML multi-documento, persistenza delle opzioni.
+YAML multi-documento, persistenza delle opzioni, root diverse per A e B.
