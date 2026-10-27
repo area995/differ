@@ -73,4 +73,55 @@ describe('renderTree', () => {
     row(root, '$.x').querySelector<HTMLElement>('.key')!.click();
     expect(onSelect).toHaveBeenCalledWith(items[1]);
   });
+
+  it('is one tab stop moved with the arrow keys', () => {
+    const root = document.body.appendChild(document.createElement('div'));
+    const onSelect = vi.fn();
+    renderTree(root, items, { expanded: new Map(), defaultDepth: 1, onSelect });
+    const node = (id: string) => root.querySelector<HTMLElement>(`[role="treeitem"][data-id="${id}"]`)!;
+    const press = (key: string) =>
+      document.activeElement!.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+
+    expect(root.querySelector('[role="tree"]')).not.toBeNull();
+    expect([...root.querySelectorAll<HTMLElement>('[role="treeitem"]')].filter((n) => n.tabIndex === 0)).toEqual([node('$.a')]);
+    expect(row(root, '$.a').querySelector<HTMLElement>('.toggle')!.tabIndex).toBe(-1);
+
+    node('$.a').focus();
+    press('ArrowDown');
+    expect(document.activeElement).toBe(node('$.a.b'));
+    expect(node('$.a.b').getAttribute('aria-expanded')).toBe('false');
+    press('ArrowRight'); // opens
+    expect(visible(root, '$.a.b.c')).toBe(true);
+    press('ArrowRight'); // goes to the first child
+    expect(document.activeElement).toBe(node('$.a.b.c'));
+    press('ArrowLeft'); // a leaf goes to its parent
+    expect(document.activeElement).toBe(node('$.a.b'));
+    press('End');
+    expect(document.activeElement).toBe(node('$.x'));
+    press('Enter');
+    expect(onSelect).toHaveBeenCalledWith(items[1]);
+    root.remove();
+  });
+
+  it('names its checkboxes and keeps focus on the node across re-renders', () => {
+    const root = document.body.appendChild(document.createElement('div'));
+    const options = {
+      expanded: new Map<string, boolean>(),
+      defaultDepth: 9,
+      checks: {
+        state: (id: string) => (id === '$.a' ? ('on' as const) : id.startsWith('$.a.') ? ('implied' as const) : ('off' as const)),
+        onChange: () => renderTree(root, items, options),
+      },
+    };
+    renderTree(root, items, options);
+    const box = (id: string) => row(root, id).querySelector<HTMLInputElement>('input[type=checkbox]')!;
+    expect(box('$.x').getAttribute('aria-label')).toBe('Includi $.x');
+    expect(box('$.a.b').getAttribute('aria-label')).toBe('Includi $.a.b: incluso tramite un nodo superiore');
+
+    const x = root.querySelector<HTMLElement>('[role="treeitem"][data-id="$.x"]')!;
+    x.focus();
+    x.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+    expect(document.activeElement?.getAttribute('data-id')).toBe('$.x');
+    root.remove();
+  });
 });

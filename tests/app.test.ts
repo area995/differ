@@ -47,6 +47,20 @@ function setText(placeholderStart: string, text: string): void {
 const setRoot = (text: string) => setText('tutto il documento', text);
 const setInclude = (text: string) => setText('tutti i sottoalberi', text);
 
+/** Text of the answer bar (counts, "equivalent" or what is missing), without the selected difference. */
+const answerText = () =>
+  [...document.querySelector('.answer')!.children]
+    .filter((c) => !c.classList.contains('evidence'))
+    .map((c) => c.textContent)
+    .join('');
+
+/** Class of the editor shade behind a line of a file ('a', 'b'…). */
+const shade = (file: string, line: number) =>
+  document.querySelectorAll(`#input-${file} .backdrop-lines > div`)[line - 1]?.className;
+
+const press = (target: HTMLElement, key: string) =>
+  target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+
 function scopeMessage(): string {
   const e = document.querySelector<HTMLElement>('.scope-msg')!;
   return e.hidden ? '' : (e.textContent ?? '');
@@ -63,6 +77,10 @@ beforeAll(async () => {
 });
 
 describe('app', () => {
+  it('says what to do before two files are loaded', () => {
+    expect(answerText()).toBe('Incolla o apri almeno due file per confrontarli.');
+  });
+
   it('compares JSON against YAML and reacts to options', () => {
     type(0, '{"server": {"port": 8080, "hosts": ["a", "b"]}}');
     type(1, 'server:\n  port: "8080"\n  hosts: [b, a]\n  debug: true\n');
@@ -77,12 +95,16 @@ describe('app', () => {
       'aggiunta$.server.debugtrue',
     ]);
 
+    const keyField = document.querySelector<HTMLElement>('.key-field')!;
+    expect(keyField.hidden).toBe(true);
     toggle('Ignora ordine array');
+    expect(keyField.hidden).toBe(false);
     expect(items()).toHaveLength(2);
     toggle('Tipi laschi');
     expect(items()).toEqual(['aggiunta$.server.debugtrue']);
     toggle('Differenze chiavi');
     expect(document.querySelector('.equal')?.textContent).toContain('equivalenti');
+    expect(document.querySelector('.equal-scope')?.textContent).toBe('Confronto parziale: chiavi aggiunte o rimosse escluse.');
 
     toggle('Ignora ordine array');
     toggle('Tipi laschi');
@@ -99,7 +121,9 @@ describe('app', () => {
     expect(error.hidden).toBe(false);
     expect(error.textContent).toMatch(/^Riga 1, colonna \d+:/);
     expect(document.querySelector('#input-a .gutter .err')?.textContent).toBe('1');
-    expect(document.getElementById('result')!.textContent).toBe('');
+    expect(answerText()).toBe(
+      'Correggi gli errori di sintassi in File A per aggiornare il confronto.',
+    );
     select.value = 'auto';
     select.dispatchEvent(new Event('change'));
   });
@@ -111,7 +135,7 @@ describe('app', () => {
     expect(option('Spazi e tabulazioni').disabled).toBe(false);
     toggle('Spazi e tabulazioni');
     expect(items()).toEqual(['formattazione$.a.bindentazione 2 → 4']);
-    expect(document.querySelector('.pane[data-side="B"] [data-line="2"] .code')?.textContent).toBe('····b:·1');
+    expect(shade('b', 2)).toBe('d-whitespace');
   });
 
   it('uses the root value in the files that have it', () => {
@@ -123,7 +147,7 @@ describe('app', () => {
     expect(items()).toEqual(['modificata$.port1 → 2']);
     expect(scopeMessage()).toBe("Root $.config applicata solo a A: confrontata con l'intero file B");
     expect(option('Spazi e tabulazioni').disabled).toBe(true);
-    expect(document.querySelector('.pane[data-side="A"] [data-line="2"]')!.className).toContain('d-changed');
+    expect(shade('a', 2)).toBe('d-changed');
 
     type(1, 'config:\n  port: 2\n  host: a\n');
     expect(items()).toEqual(['modificata$.port1 → 2']);
@@ -137,7 +161,7 @@ describe('app', () => {
     setRoot('server[');
     expect(scopeMessage()).toBe('Root non valida: server[');
     expect(document.querySelector('.scope-msg')!.classList.contains('error')).toBe(true);
-    expect(document.getElementById('result')!.textContent).toBe('');
+    expect(answerText()).toBe('Correggi Root o Includi per aggiornare il confronto.');
 
     setRoot('');
     expect(scopeMessage()).toBe('');
@@ -151,7 +175,7 @@ describe('app', () => {
 
     setInclude('server, db.pool');
     expect(items()).toEqual(['modificata$.server.port1 → 2', 'modificata$.db.pool5 → 9']);
-    expect(document.querySelector('.pane[data-side="A"] [data-line="6"]')!.className).toBe('line');
+    expect(shade('a', 6)).toBe('');
 
     setInclude('server, nope');
     expect(items()).toEqual(['modificata$.server.port1 → 2']);
@@ -162,7 +186,7 @@ describe('app', () => {
     setInclude('server, db[');
     expect(scopeMessage()).toBe('Includi non valido: db[');
     expect(document.querySelector('.scope-msg')!.classList.contains('error')).toBe(true);
-    expect(document.getElementById('result')!.textContent).toBe('');
+    expect(answerText()).toBe('Correggi Root o Includi per aggiornare il confronto.');
 
     setInclude('');
     setRoot('');
@@ -178,6 +202,9 @@ describe('app', () => {
     expect(selected(tb)).toBe('3');
     expect(document.querySelector('#input-a .gutter .cur')?.textContent).toBe('2');
     expect(document.querySelector('#input-b .gutter .cur')?.textContent).toBe('2');
+    // visible without focusing the editors: framed in the backdrop, quoted in the answer bar
+    expect(shade('a', 2)).toBe('d-changed cur cur-start cur-end');
+    expect(document.querySelector('.answer .evidence')!.textContent).toBe('$.bAr. 2b: 2Br. 2b: 3');
   });
 
   it('positions both files also for added and removed nodes', () => {
@@ -186,20 +213,53 @@ describe('app', () => {
     expect(items()).toEqual(['rimossa$.b2', 'aggiunta$.c3']);
     const [ta, tb] = textareas();
     const list = () => document.querySelectorAll<HTMLElement>('.diff-list li');
-    const flashing = (side: string) =>
-      document.querySelector(`.pane[data-side="${side}"] .flash`)?.getAttribute('data-line');
+    // each editor colors only the lines its file has
+    expect([shade('a', 2), shade('b', 2)]).toEqual(['d-removed', 'd-added']);
 
     list()[0].click(); // b only in A: B goes where b would be
     expect(selected(ta)).toBe('b: 2');
     expect(tb.selectionStart).toBe(5);
     expect(document.querySelector('#input-b .gutter .cur')?.textContent).toBe('2');
-    expect([flashing('A'), flashing('B')]).toEqual(['2', '2']);
 
     list()[1].click(); // c only in B, right after a: A goes where B → A would insert it
     expect(selected(tb)).toBe('c: 3');
     expect(ta.selectionStart).toBe(5);
     expect(document.querySelector('#input-a .gutter .cur')?.textContent).toBe('2');
-    expect([flashing('A'), flashing('B')]).toEqual(['2', '2']);
+  });
+
+  it('moves through the differences with the keyboard', () => {
+    type(0, 'a: 1\nb: 2\n');
+    type(1, 'a: 2\nb: 3\n');
+    const list = () => [...document.querySelectorAll<HTMLElement>('.diff-list li')];
+    expect(list().map((li) => li.tabIndex)).toEqual([0, -1]);
+
+    press(list()[0], 'ArrowDown');
+    expect(document.activeElement).toBe(list()[1]);
+    expect(list()[1].getAttribute('aria-current')).toBe('true');
+    expect(list().map((li) => li.tabIndex)).toEqual([-1, 0]);
+    expect(selected(textareas()[1])).toBe('3');
+
+    press(list()[1], 'k');
+    expect(document.activeElement).toBe(list()[0]);
+    expect(selected(textareas()[0])).toBe('1');
+
+    // only the current row's buttons are in the tab order; "a" presses its first one
+    const tabbable = () => list().map((li) => [...li.querySelectorAll('button')].map((b) => b.tabIndex));
+    expect(tabbable()).toEqual([
+      [0, 0],
+      [-1, -1],
+    ]);
+    press(list()[0], 'a');
+    vi.advanceTimersByTime(300);
+    expect(textareas()[1].value).toBe('a: 1\nb: 3\n');
+  });
+
+  it('opens the file picker from a button', () => {
+    const input = document.querySelector<HTMLInputElement>('#input-a input[type="file"]')!;
+    const click = vi.spyOn(input, 'click').mockImplementation(() => {});
+    document.querySelector<HTMLButtonElement>('#input-a .file-btn')!.click();
+    expect(click).toHaveBeenCalledOnce();
+    click.mockRestore();
   });
 
   it('applies a difference in either direction', () => {
@@ -211,6 +271,10 @@ describe('app', () => {
     expect(textareas()[1].value).toBe('a: 1\nb: 2\nc: 4\n');
     expect(selected(textareas()[1])).toBe('2');
     expect(items()).toEqual(['aggiunta$.c4']);
+    // the place in the list is kept: the next difference takes the resolved one's row
+    expect(document.activeElement).toBe(document.querySelector('.diff-list li'));
+    expect(document.querySelector('.status')!.textContent).toBe("Riportato in File B. Ctrl+Z nell'editor per annullare.");
+    expect(document.querySelector<HTMLElement>('#input-b .modified')!.hidden).toBe(false);
 
     apply(0, 'B → A');
     expect(textareas()[0].value).toBe('a: 1\nb: 2\nc: 4\n');
@@ -235,14 +299,8 @@ describe('app', () => {
 
     type(1, 'a: 1\nb: 3\n');
     expect(signs()).toEqual(['', '', '']);
-    expect(shades()).toEqual(['', '', '']);
-  });
-
-  it('labels the result panes with the file names', () => {
-    type(0, 'a: 1\n');
-    type(1, 'a: 2\n');
-    const titles = [...document.querySelectorAll('.pane-title')].map((t) => t.textContent);
-    expect(titles).toEqual(['File A', 'File B']);
+    // the applied marks are gone; line 2 now shows the new difference instead
+    expect(shades()).toEqual(['', 'd-changed', '']);
   });
 
   it('explains when a difference cannot be applied', () => {
@@ -261,6 +319,7 @@ describe('app', () => {
     toggle('Posizione chiavi');
     expect(applyButton(0, 'A → B').disabled).toBe(true);
     expect(applyButton(0, 'A → B').title).toMatch(/spostate/);
+    expect(document.querySelector('.diff-list li .reason')!.textContent).toBe('Le chiavi spostate non si possono riportare');
     toggle('Posizione chiavi');
   });
 
@@ -303,6 +362,7 @@ describe('app with more than two files', () => {
     type(1, 'a: 1\nb: 3\n');
     document.getElementById('add-file')!.click();
     expect(textareas()).toHaveLength(3);
+    expect(document.activeElement).toBe(textareas()[2]);
     type(2, 'a: 9\nb: 2\n');
 
     expect(document.querySelector('.pane')).toBeNull();
@@ -312,7 +372,22 @@ describe('app with more than two files', () => {
       ['$.b', '2', '3', '2'],
     ]);
     expect(cell(0, 3).className).toContain('d-changed');
-    expect(document.querySelector('.matrix-summary')!.textContent).toBe('File B: 1 differenzeFile C: 1 differenze');
+    expect(document.querySelector('.matrix-summary')!.textContent).toBe('File B: 1 differenzaFile C: 1 differenza');
+  });
+
+  it('moves through the matrix with the keyboard', () => {
+    expect(document.querySelector('.matrix')!.getAttribute('role')).toBe('grid');
+    expect(cell(0, 0).tabIndex).toBe(0);
+
+    press(cell(0, 0), 'ArrowRight');
+    press(cell(0, 1), 'ArrowRight');
+    press(cell(0, 2), 'ArrowDown');
+    expect(document.activeElement).toBe(cell(1, 2));
+    expect(cell(1, 2).getAttribute('aria-selected')).toBe('true');
+    expect(cell(0, 0).tabIndex).toBe(-1);
+    expect(cell(1, 2).getAttribute('aria-label')).toBe('3, diversa dalla base');
+    expect(document.querySelector('.matrix-actions .what')!.textContent).toBe('$.b · File B');
+    expect(action('Base → File B')).toBeDefined();
   });
 
   it('positions the editors and applies changes from a cell', () => {
@@ -332,9 +407,29 @@ describe('app with more than two files', () => {
 
     cell(0, 2).click();
     expect(action('Base → File B').disabled).toBe(true);
-    run(action('Base → tutti'));
+    expect(document.querySelector('.matrix-actions .reason')!.textContent).toBe('Nessuna differenza diretta con la base');
+    action('Base → tutti…').click();
+    expect(document.querySelector('.matrix-actions .preview')!.textContent).toBe('Riportare 3 in File C (ora 2)?');
+    expect(textareas()[2].value).toBe('a: 1\nb: 2\n');
+    run(action('Conferma'));
     expect(textareas()[2].value).toBe('a: 1\nb: 3\n');
     expect(document.querySelector('.equal')).not.toBeNull();
+  });
+
+  it('undoes "Base → tutti" in every file at once', () => {
+    type(2, 'a: 1\nb: 2\n');
+    cell(0, 3).click();
+    action('Base → tutti…').click();
+    run(action('Conferma'));
+    expect(textareas()[2].value).toBe('a: 1\nb: 3\n');
+    const status = document.querySelector<HTMLElement>('.status')!;
+    expect(status.textContent).toBe('Riportato in File C.Annulla tutto');
+
+    [...status.querySelectorAll('button')].find((b) => b.textContent === 'Annulla tutto')!.click();
+    vi.advanceTimersByTime(300);
+    expect(textareas()[2].value).toBe('a: 1\nb: 2\n');
+    expect(status.textContent).toBe('Riporto annullato in tutti i file.');
+    type(2, 'a: 1\nb: 3\n');
   });
 
   it('lets any file be the base', () => {
@@ -347,6 +442,23 @@ describe('app with more than two files', () => {
     vi.advanceTimersByTime(300);
   });
 
+  it('names files after their labels', () => {
+    const label = (file: string, text: string) => {
+      const input = document.querySelector<HTMLInputElement>(`#input-${file} .slot-name`)!;
+      input.value = text;
+      input.dispatchEvent(new Event('input'));
+      vi.advanceTimersByTime(300);
+    };
+    label('b', 'staging');
+    label('c', ' prod ');
+    expect(headers()).toEqual(['Path', 'File A (base)', 'staging', 'prod']);
+    cell(0, 3).click();
+    expect(action('Base → prod')).toBeDefined();
+    label('b', '');
+    label('c', '');
+    expect(headers()).toEqual(['Path', 'File A (base)', 'File B', 'File C']);
+  });
+
   it('goes back to the pair view when a file is removed', () => {
     expect(document.querySelector('#input-a .remove')).not.toBeNull();
     document.querySelector<HTMLButtonElement>('#input-c .remove')!.click();
@@ -355,6 +467,19 @@ describe('app with more than two files', () => {
     expect(document.querySelector('.matrix')).toBeNull();
     expect(items()).toEqual(['modificata$.a1 → 2']);
     expect(document.querySelector<HTMLElement>('#input-a .remove')!.hidden).toBe(true);
+
+    // removing is immediate, with a way back instead of a confirmation
+    const status = document.querySelector<HTMLElement>('.status')!;
+    expect(status.textContent).toBe('File C rimosso dal confronto.Ripristina');
+    expect(document.activeElement).toBe(status.querySelector('button'));
+    status.querySelector('button')!.click();
+    vi.advanceTimersByTime(300);
+    expect(textareas()).toHaveLength(3);
+    expect(textareas()[2].value).toBe('a: 1\nb: 3\n');
+    expect(document.querySelector('.matrix')).not.toBeNull();
+
+    document.querySelector<HTMLButtonElement>('#input-c .remove')!.click();
+    vi.advanceTimersByTime(300);
   });
 
   it('uses icons for save and remove', () => {
@@ -462,6 +587,5 @@ describe('app with more than two files', () => {
     expect(name.textContent).toBe('config.prod.yaml');
     expect(name.title).toBe('config.prod.yaml');
     vi.advanceTimersByTime(300);
-    expect(document.querySelector('.pane-title')!.textContent).toBe('File A · config.prod.yaml');
   });
 });

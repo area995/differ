@@ -5,14 +5,28 @@ import { renderTree, type TreeItem } from './tree';
 
 type BoolKey = Exclude<keyof DiffOptions, 'arrayKeyField' | 'root' | 'include'>;
 
-const CHECKS: { key: BoolKey; label: string; title: string }[] = [
-  { key: 'keys', label: 'Differenze chiavi', title: 'Chiavi aggiunte o rimosse' },
-  { key: 'values', label: 'Differenze valori', title: 'Valori o tipi diversi sulle stesse chiavi' },
-  { key: 'whitespace', label: 'Spazi e tabulazioni', title: 'Differenze di formattazione su contenuti uguali' },
-  { key: 'keyOrder', label: 'Posizione chiavi', title: 'Chiavi comuni in ordine diverso' },
-  { key: 'ignoreArrayOrder', label: 'Ignora ordine array', title: "Abbina gli elementi degli array senza considerare l'indice" },
-  { key: 'looseTypes', label: 'Tipi laschi', title: '8080 uguale a "8080", true uguale a "true"' },
+/** "show" = which kinds of difference are reported; "match" = how the documents are matched. */
+const CHECKS: { key: BoolKey; label: string; title: string; group: 'show' | 'match' }[] = [
+  { key: 'keys', label: 'Differenze chiavi', title: 'Chiavi aggiunte o rimosse', group: 'show' },
+  { key: 'values', label: 'Differenze valori', title: 'Valori o tipi diversi sulle stesse chiavi', group: 'show' },
+  { key: 'whitespace', label: 'Spazi e tabulazioni', title: 'Differenze di formattazione su contenuti uguali', group: 'show' },
+  { key: 'keyOrder', label: 'Posizione chiavi', title: 'Chiavi comuni in ordine diverso', group: 'show' },
+  {
+    key: 'ignoreArrayOrder',
+    label: 'Ignora ordine array',
+    title: "Abbina gli elementi degli array senza considerare l'indice",
+    group: 'match',
+  },
+  { key: 'looseTypes', label: 'Tipi laschi', title: '8080 uguale a "8080", true uguale a "true"', group: 'match' },
 ];
+
+function fieldset(legend: string, className: string): HTMLFieldSetElement {
+  const set = el('fieldset', `opt-group ${className}`);
+  const title = el('legend');
+  title.textContent = legend;
+  set.append(title);
+  return set;
+}
 
 export type OptionsBar = {
   setWhitespaceEnabled(enabled: boolean, reason: string): void;
@@ -29,6 +43,11 @@ export function createOptionsBar(
   const opts = { ...initial };
   const labels = new Map<BoolKey, HTMLLabelElement>();
   const inputs = new Map<BoolKey, HTMLInputElement>();
+  // what is compared, which differences are shown, how documents are matched
+  const scope = fieldset('Ambito', 'scope');
+  const show = fieldset('Mostra', 'show');
+  const match = fieldset('Confronto', 'match');
+  root.append(scope, show, match);
 
   const pathField = (key: 'root' | 'include', label: string, placeholder: string, title: string) => {
     const input = el('input');
@@ -42,7 +61,7 @@ export function createOptionsBar(
     const wrapper = el('label', 'opt');
     wrapper.title = title;
     wrapper.append(label, input);
-    root.append(wrapper);
+    scope.append(wrapper);
     return input;
   };
   pathField(
@@ -66,7 +85,7 @@ export function createOptionsBar(
   pick.textContent = 'Scegli';
   pick.title = 'Scegli i sottoalberi da includere';
   pick.setAttribute('aria-expanded', 'false');
-  root.append(pick);
+  scope.append(pick);
   const picker = el('div', 'include-picker');
   picker.hidden = true;
 
@@ -106,8 +125,13 @@ export function createOptionsBar(
   const fieldInput = el('input');
   fieldInput.type = 'text';
   fieldInput.placeholder = 'campo chiave (es. name)';
+  fieldInput.setAttribute('aria-label', 'Campo chiave per abbinare gli elementi degli array');
   fieldInput.value = opts.arrayKeyField;
-  fieldInput.disabled = !opts.ignoreArrayOrder;
+  // only offered when it applies: an always-visible disabled field is one more control to read past
+  const field = el('label', 'opt key-field');
+  field.title = 'Abbina gli oggetti degli array per questo campo (es. name, id); vuoto = per uguaglianza';
+  field.append(fieldInput);
+  field.hidden = !opts.ignoreArrayOrder;
   fieldInput.addEventListener('input', () => {
     opts.arrayKeyField = fieldInput.value;
     onChange({ ...opts });
@@ -121,23 +145,22 @@ export function createOptionsBar(
     input.checked = opts[c.key];
     input.addEventListener('change', () => {
       opts[c.key] = input.checked;
-      fieldInput.disabled = !opts.ignoreArrayOrder;
+      field.hidden = !opts.ignoreArrayOrder;
       onChange({ ...opts });
     });
     label.append(input, c.label);
-    root.append(label);
+    (c.group === 'show' ? show : match).append(label);
     labels.set(c.key, label);
     inputs.set(c.key, input);
+    // the key field only means something with this option, so it sits right after it
+    if (c.key === 'ignoreArrayOrder') match.append(field);
   }
 
-  const field = el('label', 'opt');
-  field.title = 'Con "Ignora ordine array": abbina gli oggetti per questo campo (es. name, id)';
-  field.append(fieldInput);
-  root.append(field);
-
   const scopeMessage = el('div', 'scope-msg');
+  // announced politely: it changes while the user types in Root or Includi
+  scopeMessage.setAttribute('role', 'status');
   scopeMessage.hidden = true;
-  root.append(scopeMessage, picker);
+  scope.append(scopeMessage, picker);
 
   return {
     setWhitespaceEnabled(enabled, reason) {

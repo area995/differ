@@ -10,14 +10,15 @@
   --added-bar: #2e9e50;
   --removed: #fde7e7;
   --removed-bar: #d0393e;
+  /* bars keep ≥3:1 against their own tint (WCAG non-text contrast) */
   --changed: #fff4cc;
-  --changed-bar: #c99a06;
+  --changed-bar: #a87f00;
   --type: #ffe6d1;
-  --type-bar: #dd6b20;
+  --type-bar: #c55a12;
   --moved: #e1ecff;
   --moved-bar: #3b6fd8;
   --whitespace: #eef0f3;
-  --whitespace-bar: #8a94a6;
+  --whitespace-bar: #7a8496;
   --applied: #e3e6ea;
   color-scheme: light dark;
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -39,6 +40,11 @@
     --moved: #172a4a;
     --whitespace: #23272e;
     --applied: #2d323a;
+    /* on dark tints the brighter bars are the readable ones */
+    --changed-bar: #c99a06;
+    --type-bar: #dd6b20;
+    --moved-bar: #7aa2ff;
+    --whitespace-bar: #8a94a6;
   }
 }
 
@@ -49,6 +55,12 @@
 /* elements with their own display (flex, grid…) must still disappear when hidden */
 [hidden] {
   display: none !important;
+}
+
+/* one focus ring for every control; components with their own inset ring override the offset */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 body {
@@ -74,15 +86,53 @@ h2 {
 }
 
 /* options */
+/* three groups: what is compared, which differences are shown, how documents are matched */
 .options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px 24px;
   margin-bottom: 12px;
   padding: 10px 12px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--panel);
+}
+
+.opt-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  align-items: center;
+  gap: 6px 16px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.opt-group legend {
+  float: left; /* lets the legend sit inside the flex flow, on its own row */
+  width: 100%;
+  margin-bottom: 2px;
+  padding: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.opt-group.scope .opt {
+  flex: 1 1 16rem;
+}
+
+.opt-group.scope .opt input[type='text'] {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .options {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .opt {
@@ -108,7 +158,7 @@ h2 {
 .scope-msg {
   flex-basis: 100%;
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   white-space: pre-line;
 }
 
@@ -117,23 +167,11 @@ h2 {
 }
 
 /* layout */
-.panes {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 12px;
-}
-
 /* two panels side by side, more wrap onto new rows */
 .inputs {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
   gap: 12px;
-}
-
-@media (max-width: 900px) {
-  .panes {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }
 
 .add-file {
@@ -189,8 +227,8 @@ h2 {
 }
 
 .icon-btn.remove:hover {
-  border-color: var(--removed-bar);
-  color: var(--removed-bar);
+  border-color: var(--error);
+  color: var(--error);
 }
 
 /* Testo / Albero switch */
@@ -233,8 +271,12 @@ h2 {
   margin-bottom: 4px;
 }
 
+/* the one small-button style: tree tools, Scegli, apply, matrix actions, status actions */
 .tree-tools button,
-.include-pick {
+.include-pick,
+.apply button,
+.matrix-actions button,
+.status button {
   padding: 2px 8px;
   border: 1px solid var(--border);
   border-radius: 4px;
@@ -242,7 +284,17 @@ h2 {
   color: var(--fg);
   font: inherit;
   font-size: 0.85rem;
+  white-space: nowrap;
   cursor: pointer;
+}
+
+:is(.tree-tools button, .include-pick, .apply button, .matrix-actions button, .status button):hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+:is(.apply button, .matrix-actions button):disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 /* shared tree */
@@ -259,6 +311,17 @@ h2 {
   padding-left: 0;
 }
 
+/* a focused node rings its own row, not the subtree its <li> contains */
+[role='treeitem']:focus-visible {
+  outline: none;
+}
+
+[role='treeitem']:focus-visible > .tree-row {
+  border-radius: 4px;
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
 .tree-row {
   display: flex;
   align-items: center;
@@ -267,6 +330,9 @@ h2 {
 }
 
 .tree-row .toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 1.2em;
   flex: none;
   padding: 0;
@@ -274,7 +340,22 @@ h2 {
   background: none;
   color: var(--muted);
   font: inherit;
-  text-align: center;
+}
+
+.tree-row .toggle svg {
+  width: 1em;
+  height: 1em;
+  transition: transform 120ms ease-out;
+}
+
+.tree-row .toggle[aria-expanded='true'] svg {
+  transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tree-row .toggle svg {
+    transition: none;
+  }
 }
 
 button.toggle {
@@ -282,6 +363,11 @@ button.toggle {
 }
 
 .tree-row .key.selectable {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
   cursor: pointer;
 }
 
@@ -295,14 +381,15 @@ button.toggle {
   text-overflow: ellipsis;
 }
 
+/* values stay out of the ledger and accent colors: green would read as "added", blue as "clickable" */
 .tree-row .val.string {
-  color: var(--added-bar);
+  color: var(--fg);
 }
 
 .tree-row .val.number,
 .tree-row .val.boolean,
 .tree-row .val.null {
-  color: var(--accent);
+  color: var(--muted);
 }
 
 .tree-row .badge,
@@ -341,14 +428,39 @@ button.toggle {
   max-width: 100%;
   overflow: hidden;
   padding: 2px 10px;
-  border: 1px solid var(--accent);
+  /* neutral: a moved tint here would read as a "moved" difference */
+  border: 1px solid var(--border);
   border-radius: 999px;
-  background: var(--moved);
+  background: var(--bg);
   color: var(--fg);
-  font-size: 0.95rem;
-  font-weight: 700;
+  font-size: 0.85rem;
+  font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* quiet until used: reads as part of the heading, becomes a field on hover and focus */
+.slot-name {
+  width: 11ch;
+  min-width: 0;
+  padding: 2px 6px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-weight: 600;
+}
+
+.slot-name::placeholder {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.slot-name:hover,
+.slot-name:focus {
+  border-color: var(--border);
+  background: var(--bg);
 }
 
 .detected {
@@ -358,8 +470,22 @@ button.toggle {
 
 .file-btn {
   margin-left: auto;
+  padding: 0;
+  border: 0;
+  background: none;
   color: var(--accent);
+  font: inherit;
   cursor: pointer;
+}
+
+.file-btn:hover {
+  text-decoration: underline;
+}
+
+/* the textarea draws no outline of its own: the whole editor shows the focus */
+.editor:focus-within {
+  border-color: var(--accent);
+  outline: 1px solid var(--accent);
 }
 
 .editor {
@@ -373,8 +499,7 @@ button.toggle {
 
 .gutter,
 textarea,
-.backdrop,
-.pane {
+.backdrop {
   font: 13px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
   tab-size: 4;
 }
@@ -443,8 +568,10 @@ textarea {
   padding-top: 6px;
 }
 
-.backdrop-lines > div {
+/* low specificity, so that the difference kinds below can color the bar */
+:where(.backdrop-lines) > div {
   height: 1.5em;
+  border-left: 4px solid transparent;
 }
 
 .backdrop-lines > .applied {
@@ -455,10 +582,27 @@ textarea {
   box-shadow: inset 0 2px 0 var(--whitespace-bar);
 }
 
+/* the selected node: a Signal Blue frame around its lines, drawn inside the kind bar */
+.backdrop-lines > .cur {
+  box-shadow:
+    inset -2px 0 0 var(--accent),
+    inset 2px 0 0 var(--accent),
+    inset 0 2px 0 var(--cur-top, transparent),
+    inset 0 -2px 0 var(--cur-bottom, transparent);
+}
+
+.backdrop-lines > .cur-start {
+  --cur-top: var(--accent);
+}
+
+.backdrop-lines > .cur-end {
+  --cur-bottom: var(--accent);
+}
+
 .error {
   margin-top: 6px;
   color: var(--error);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
 /* result */
@@ -466,12 +610,104 @@ textarea {
   margin-top: 16px;
 }
 
+/* a refused change is an error, not a "removed" difference: Alarm Red, outside the ledger */
 .notice {
   margin-top: 12px;
   padding: 8px 12px;
-  border-left: 4px solid var(--removed-bar);
-  border-radius: 4px;
-  background: var(--removed);
+  border: 1px solid var(--error);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--error);
+}
+
+/* outcome of the last change: neutral, it is not a difference */
+.status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel);
+}
+
+.modified {
+  color: var(--fg);
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.matrix-actions .preview {
+  font-size: 0.85rem;
+}
+
+/* the answer stays in view while the list or the matrix is scrolled */
+.answer {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 -16px 12px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.answer:empty {
+  display: none;
+}
+
+.answer .summary,
+.answer .matrix-summary {
+  margin-bottom: 0;
+}
+
+/* where the selected difference is in each file: path, then file · line · first line of text */
+.evidence {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 16px;
+  font-size: 0.85rem;
+}
+
+.evidence code {
+  font: 13px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.evidence .path {
+  font-weight: 600;
+}
+
+.evidence .side {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.evidence .who {
+  font-weight: 600;
+}
+
+.evidence .ln {
+  color: var(--muted);
+}
+
+.evidence .line {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: pre;
+}
+
+.evidence .missing {
+  color: var(--muted);
+  font-style: italic;
 }
 
 .summary {
@@ -489,56 +725,38 @@ textarea {
   font-size: 0.85rem;
 }
 
+/* neutral: "equivalent" is an outcome, not a kind of difference (Ledger Color Rule) */
 .equal {
+  margin: 0;
   padding: 12px;
-  border-radius: 8px;
-  background: var(--added);
-}
-
-.pane-box {
-  min-width: 0;
-}
-
-.pane-title {
-  margin: 0 0 4px;
-  font-size: 0.95rem;
-}
-
-.pane {
-  position: relative;
-  max-height: 420px;
-  overflow: auto;
   border: 1px solid var(--border);
-  border-radius: 4px;
-  background: var(--bg);
+  border-radius: 8px;
+  background: var(--panel);
+  font-weight: 600;
 }
 
-.line {
-  display: flex;
-  border-left: 4px solid transparent;
-  white-space: pre;
+.equal-scope {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.85rem;
+  font-weight: 400;
 }
 
-.line .num {
-  flex: none;
-  width: 3.5em;
-  padding-right: 8px;
+.waiting {
+  margin: 0;
+  padding: 12px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
   color: var(--muted);
-  text-align: right;
-  user-select: none;
 }
 
-.line.flash {
-  animation: flash 1.2s ease-out;
+/* why a disabled action is unavailable: tinted rows need the full text color to stay readable */
+.reason {
+  font-size: 0.85rem;
 }
 
-@keyframes flash {
-  from {
-    outline: 2px solid var(--fg);
-  }
-  to {
-    outline: 2px solid transparent;
-  }
+.diff-list .reason {
+  grid-column: 2 / -1;
 }
 
 .diff-list {
@@ -565,6 +783,12 @@ textarea {
   border-top: 1px solid var(--border);
 }
 
+.diff-list li.selected,
+.diff-list li:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
 .diff-list .path,
 .diff-list .desc {
   overflow-wrap: anywhere;
@@ -575,30 +799,13 @@ textarea {
   gap: 4px;
 }
 
-.apply button {
-  padding: 2px 8px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  background: var(--bg);
-  color: var(--fg);
-  font: inherit;
-  font-size: 0.85rem;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.apply button:hover:not(:disabled) {
-  border-color: var(--accent);
-}
-
-.apply button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
 @media (max-width: 600px) {
   .diff-list li {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .diff-list .reason {
+    grid-column: auto;
   }
 }
 
@@ -610,8 +817,9 @@ textarea {
   margin-bottom: 8px;
 }
 
+/* per-file counts, not a kind of difference: neutral and without the ledger bar */
 .matrix-summary .chip {
-  border-left-color: var(--border);
+  border: 1px solid var(--border);
   background: var(--panel);
 }
 
@@ -627,30 +835,39 @@ textarea {
   background: var(--panel);
 }
 
+.matrix-actions .buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 .matrix-actions .what {
   margin-right: auto;
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
   overflow-wrap: anywhere;
 }
 
-.matrix-actions button {
-  padding: 2px 8px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  background: var(--bg);
-  color: var(--fg);
-  font: inherit;
-  font-size: 0.85rem;
-  cursor: pointer;
+/* the table scrolls inside its own box, so that its header row and path column can stay in view */
+.matrix-scroll {
+  max-height: 70vh;
+  overflow: auto;
 }
 
-.matrix-actions button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
+.matrix-scroll .matrix th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
-.result:has(.matrix) {
-  overflow-x: auto;
+.matrix-scroll .matrix :is(th, td):first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--panel);
+}
+
+.matrix-scroll .matrix th:first-child {
+  z-index: 2;
 }
 
 .matrix {
@@ -682,16 +899,19 @@ textarea {
   border-left-width: 4px;
 }
 
+/* differs only through an ancestor: same colors at full contrast, marked by a dashed bar */
 .matrix td.inherited {
-  opacity: 0.6;
+  border-left-style: dashed;
+  font-style: italic;
 }
 
-.matrix td.selected {
+.matrix td.selected,
+.matrix td:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: -2px;
 }
 
-/* difference kinds: keep after .line/.chip/.diff-list so they win */
+/* difference kinds: keep after .chip/.diff-list/.backdrop-lines so they win */
 .d-added {
   background: var(--added);
   border-left-color: var(--added-bar);
@@ -722,6 +942,6 @@ textarea {
   border-left-color: var(--whitespace-bar);
 }
 
-.line.d-whitespace {
+.backdrop-lines > .d-whitespace {
   border-left-style: dashed;
 }

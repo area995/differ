@@ -2,26 +2,31 @@
 import { describe, expect, it } from 'vitest';
 import { diff } from '../src/core/diff';
 import { DEFAULT_OPTIONS } from '../src/core/model';
-import { describeEntry, renderResult } from '../src/ui/result';
+import { describeEntry, lineMarks, renderResult } from '../src/ui/result';
 import { node } from './helpers';
 
 describe('renderResult', () => {
-  it('renders summary, highlighted panes and the list', () => {
-    const textA = 'a: 1\nb: 2\n';
-    const textB = 'a: 1\nb: 3\nc: 4\n';
-    const entries = diff(node(textA), node(textB), DEFAULT_OPTIONS);
+  it('renders the summary and the list', () => {
+    const entries = diff(node('a: 1\nb: 2\n'), node('a: 1\nb: 3\nc: 4\n'), DEFAULT_OPTIONS);
     const root = document.createElement('div');
-    renderResult(root, { textA, textB, entries });
+    renderResult(root, { entries });
 
     expect(root.querySelectorAll('.diff-list li')).toHaveLength(2);
-    expect(root.querySelector('.pane[data-side="A"] [data-line="2"]')!.className).toContain('d-changed');
-    expect(root.querySelector('.pane[data-side="B"] [data-line="3"]')!.className).toContain('d-added');
-    expect(root.querySelector('.summary')!.textContent).toContain('1 modificate');
+    expect(root.querySelector('.summary')!.textContent).toContain('1 modificata');
+  });
+
+  it('marks the lines of each side by kind', () => {
+    const entries = diff(node('a: 1\nb: 2\n'), node('a: 1\nb: 3\nc: 4\n'), DEFAULT_OPTIONS);
+    expect([...lineMarks(entries, 'a')]).toEqual([[2, 'changed']]);
+    expect([...lineMarks(entries, 'b')]).toEqual([
+      [2, 'changed'],
+      [3, 'added'],
+    ]);
   });
 
   it('shows a message when files are equivalent', () => {
     const root = document.createElement('div');
-    renderResult(root, { textA: 'a: 1', textB: '{"a": 1}', entries: [] });
+    renderResult(root, { entries: [] });
     expect(root.querySelector('.equal')!.textContent).toContain('equivalenti');
   });
 
