@@ -13,6 +13,15 @@ Confronto semantico tra file chiave-valore (JSON, YAML) nel browser. I file non 
 - **Root**: path (es. `config`, `$.spec.template`, `users[name=alice]`) il cui valore viene usato al posto del documento nei file che lo contengono; utile per confrontare un file annidato con uno non annidato
 - **Includi**: path relativi alla root separati da virgola (es. `server, db.pool`): confronta solo quei sottoalberi
 
+## Più di due file
+
+- **+ Aggiungi file** aggiunge File C, D, …; il selettore **Base** sceglie il file di riferimento, **×** rimuove
+  un file (quando sono più di due).
+- Con due file resta la vista affiancata (base a sinistra). Con tre o più compare una **matrice**: una riga per
+  ogni path che differisce in almeno un file, una colonna per file, celle colorate rispetto alla base.
+- Click su una cella: tutti gli editor si posizionano sulla riga; la barra azioni offre `Base → File X`,
+  `File X → Base` e `Base → tutti`.
+
 ## Navigare e riportare le modifiche
 
 - Click su una differenza: il nodo viene selezionato in entrambi gli editor e le righe si evidenziano nel gutter.

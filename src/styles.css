@@ -112,26 +112,66 @@ h2 {
 }
 
 /* layout */
-.inputs,
 .panes {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 12px;
 }
 
+/* two panels side by side, more wrap onto new rows */
+.inputs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  gap: 12px;
+}
+
 @media (max-width: 900px) {
-  .inputs,
   .panes {
     grid-template-columns: minmax(0, 1fr);
   }
 }
 
+.add-file {
+  margin-top: 8px;
+  padding: 4px 12px;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  cursor: pointer;
+}
+
 /* input panels */
 .panel {
+  min-width: 0;
   padding: 8px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--panel);
+}
+
+.panel.is-base {
+  border-color: var(--accent);
+}
+
+.base-pick {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.remove {
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg);
+  font: inherit;
+  cursor: pointer;
 }
 
 .panel.drop {
@@ -404,6 +444,95 @@ textarea {
   .diff-list li {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* matrix */
+.matrix-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.matrix-summary .chip {
+  border-left-color: var(--border);
+  background: var(--panel);
+}
+
+.matrix-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel);
+}
+
+.matrix-actions .what {
+  margin-right: auto;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  overflow-wrap: anywhere;
+}
+
+.matrix-actions button {
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.matrix-actions button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.result:has(.matrix) {
+  overflow-x: auto;
+}
+
+.matrix {
+  width: 100%;
+  border-collapse: collapse;
+  font: 13px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.matrix th,
+.matrix td {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.matrix th {
+  background: var(--panel);
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  white-space: nowrap;
+}
+
+.matrix td {
+  cursor: pointer;
+}
+
+.matrix td.cell {
+  border-left-width: 4px;
+}
+
+.matrix td.inherited {
+  opacity: 0.6;
+}
+
+.matrix td.selected {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }
 
 /* difference kinds: keep after .line/.chip/.diff-list so they win */
