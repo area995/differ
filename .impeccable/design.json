@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-27T14:58:51.696Z",
-  "title": "Design System: KV Diff",
+  "generatedAt": "2026-10-27T15:37:37.161Z",
+  "title": "Design System: Ledger",
   "extensions": {
     "colorMeta": {
       "signal-blue": {
@@ -41,7 +41,7 @@
       "slate-muted": {
         "role": "neutral",
         "displayName": "Slate Muted",
-        "canonical": "#667085",
+        "canonical": "#5f6878",
         "oklch": "oklch(54.4% 0.035 265)",
         "dark": "#98a2b3",
         "tonalRamp": [
@@ -75,7 +75,7 @@
       "bench-gray": {
         "role": "neutral",
         "displayName": "Bench Gray",
-        "canonical": "#f7f8fa",
+        "canonical": "#f6f7f9",
         "oklch": "oklch(97.9% 0.003 265)",
         "dark": "#1b1f26",
         "tonalRamp": [
@@ -321,6 +321,22 @@
           "oklch(95% 0.004 262)"
         ],
         "dark": "#8a94a6"
+      },
+      "canvas": {
+        "role": "neutral",
+        "displayName": "Canvas",
+        "canonical": "#e6e9ee",
+        "dark": "#0e1014",
+        "tonalRamp": [
+          "oklch(15% 0.000 265)",
+          "oklch(26% 0.001 265)",
+          "oklch(38% 0.002 265)",
+          "oklch(49% 0.003 265)",
+          "oklch(61% 0.003 265)",
+          "oklch(72% 0.002 265)",
+          "oklch(84% 0.001 265)",
+          "oklch(95% 0.000 265)"
+        ]
       }
     },
     "typographyMeta": {

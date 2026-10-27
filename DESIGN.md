@@ -1,12 +1,13 @@
 ---
-name: KV Diff
+name: Ledger
 description: Confronto semantico JSON / YAML. I file restano nel browser.
 colors:
+  canvas: "#e6e9ee"
   signal-blue: "#3b6fd8"
   ink: "#1d2330"
-  slate-muted: "#667085"
+  slate-muted: "#5f6878"
   paper: "#ffffff"
-  bench-gray: "#f7f8fa"
+  bench-gray: "#f6f7f9"
   hairline: "#d9dde5"
   alarm-red: "#c42b2b"
   applied-gray: "#e3e6ea"
@@ -104,7 +105,7 @@ components:
     typography: "{typography.label}"
 ---
 
-# Design System: KV Diff
+# Design System: Ledger
 
 ## Overview
 
@@ -131,11 +132,12 @@ The palette is neutral paper and ink, one Signal Blue accent, and six paired kin
 ### Neutral
 - **Ink**: primary text. Dark theme: `#e4e7ec`.
 - **Slate Muted**: secondary text such as the tagline, detected format, gutter numbers, inactive tabs, tree badges and notes. Dark: `#98a2b3`.
-- **Paper**: page background, plus the editor, tree view, inputs and button fills that sit on top of panels. Dark: `#14171c`.
-- **Bench Gray**: panel surfaces (options bar, file cards, gutter, matrix headers and actions bar). Dark: `#1b1f26`.
+- **Canvas**: the page itself, and the sticky answer bar that belongs to it. The darkest surface in light theme, so panels read as sheets laid on it. Dark: `#0e1014`.
+- **Paper**: working surfaces: the editor, tree view, inputs and button fills that sit on top of panels, plus the diff list and matrix bodies. Dark: `#14171c`.
+- **Bench Gray**: panel surfaces (options bar, file cards, gutter, matrix headers and actions bar, status line, waiting box). Dark: `#1b1f26`.
 - **Hairline**: every border and divider. Dark: `#2c323c`.
 - **Alarm Red**: parse errors, invalid-scope messages, and error marks in the gutter. Dark: `#ff6b6b`.
-- **Applied Gray**: background of editor lines changed by an apply action, kept until the user edits the text by hand. Dark: `#2d323a`.
+- **Applied Gray**: background of editor lines changed by an apply action, kept until the content is replaced. Dark: `#2d323a`.
 
 ### Difference Kinds (the ledger vocabulary)
 Each kind pairs a pale **tint** (row or line background) with a saturated **bar** (4px left border).
@@ -165,7 +167,7 @@ In dark theme the tints darken (added `#16351f`, removed `#3d1a1b`, changed `#3a
 **Character:** The pairing is entirely native. The system sans handles chrome and prose so the tool feels at home on each OS. The system monospace carries everything that is data (editors, gutters, trees, the matrix, path readouts) so columns line up and paths read exactly as typed.
 
 ### Hierarchy
-- **Headline** (700, 1.4rem): the app title "KV Diff" only.
+- **Headline** (700, 1.4rem): the app title "Ledger" only.
 - **Title** (700, 1rem): card headings such as "File A" and "File B".
 - **Body** (400, 1rem): option labels, diff-list descriptions, notices.
 - **Label** (400, 0.85rem): small buttons, tabs, chips, detected format, base picker. The scope message uses 0.9rem.
@@ -188,7 +190,7 @@ A single scrolling page with 16px body padding, stacked top to bottom in task or
 
 ## Elevation & Depth
 
-The system is flat. There are no `box-shadow` elevations. Depth comes from tonal layering on two levels: a **Bench Gray** panel holds **Paper** working surfaces (editor, tree, inputs, buttons). Each layer is outlined with a 1px Hairline border. State is shown with color and outlines, never with lift: Signal Blue borders and outlines, a 2px dashed drop outline. Selecting a difference selects its text in each editor and marks its lines in the gutter.
+The system is flat. There are no `box-shadow` elevations. Depth comes from tonal layering on three levels: the **Canvas** page holds **Bench Gray** panels (options bar, file cards), which hold **Paper** working surfaces (editor, tree, inputs, buttons). Anything that sits straight on the canvas carries its own fill (the add-file button and the list are Paper, the waiting box is Bench Gray), because Slate Muted and Signal Blue text need it for 4.5:1. Each layer is outlined with a 1px Hairline border. State is shown with color and outlines, never with lift: Signal Blue borders and outlines, a 2px dashed drop outline. Selecting a difference selects its text in each editor and marks its lines in the gutter.
 
 ### Named Rules
 **The Flat Ledger Rule.** Surfaces never cast shadows. If something needs emphasis, change its border or tint, not its elevation.
@@ -219,10 +221,11 @@ Compact, bordered and quiet. They become emphatic only on hover.
 
 ### Inputs / Fields
 - **Text input** (Root, Includi, array key field): Paper fill, Hairline border, 4px radius, 4px × 6px padding.
-- **Editor:** a gutter in Bench Gray with muted line numbers and +/− signs, and a transparent textarea over a backdrop that paints Applied Gray lines. The current line is highlighted in Moved Mist and error lines in bold Alarm Red. The selected node is framed in the backdrop with a 2px Signal Blue outline inside the kind bar, so it shows even when the textarea is not focused (browsers paint no selection there). 280px tall, monospace 13/1.5.
+- **Editor:** read-only: it scrolls and its text can be selected for copying, but it shows no caret and cannot be typed into; content arrives by opening, dropping or pasting a file, and changes only through apply. A gutter in Bench Gray with muted line numbers and +/− signs, and a transparent textarea over a backdrop that paints Applied Gray lines. The current line is highlighted in Moved Mist and error lines in bold Alarm Red. The selected node is framed in the backdrop with a 2px Signal Blue outline inside the kind bar, so it shows even when the textarea is not focused (browsers paint no selection there). 280px tall, monospace 13/1.5.
 - **Disabled option:** 50% opacity with a not-allowed cursor.
 
 ### Navigation
+- **Theme switch (Auto / Chiaro / Scuro):** a segmented control of native radios, top right of the header, in a Bench Gray track with a Hairline border (6px radius). The checked segment is Paper with Ink 600 text; the others are Slate Muted. Auto follows `prefers-color-scheme`; Chiaro / Scuro pin `data-theme` on `<html>` and are remembered in localStorage (`ledger-theme`), applied by an inline script before the first paint.
 - **Tabs (Testo / Albero):** small top-rounded (6px) tabs. Inactive tabs are Bench Gray with muted text. The selected tab (`aria-selected`) is Paper with Ink text in 600 weight, so it reads as sitting on the surface below it.
 
 ### Diff List (signature)
@@ -245,7 +248,7 @@ A monospace tree (13/1.6) with 16px indent, a muted toggle and selectable keys (
 - **Do** set keys, values, paths and file content in system monospace at 13px.
 - **Do** keep surfaces flat: Bench Gray panels holding Paper working surfaces, outlined with 1px Hairline borders.
 - **Do** give icon-only buttons an `aria-label` and a tooltip.
-- **Do** define every new color as a CSS custom property with a dark-theme value under `prefers-color-scheme: dark`.
+- **Do** define every new color as a CSS custom property with a dark-theme value in both dark blocks: the `prefers-color-scheme: dark` one (for Auto) and `:root[data-theme='dark']` (for Scuro).
 
 ### Don't:
 - **Don't** use the ledger kind colors for generic success, warning or danger states in chrome.

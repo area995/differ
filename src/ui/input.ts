@@ -104,7 +104,9 @@ export function createInputPanel(
   const textarea = el('textarea');
   textarea.spellcheck = false;
   textarea.wrap = 'off';
-  textarea.placeholder = 'Incolla qui il contenuto o trascina un file';
+  // content comes only from a file, a drop or a paste: the text can be scrolled and selected, not typed
+  textarea.readOnly = true;
+  textarea.placeholder = 'Apri un file, trascinalo qui o incollalo (Ctrl+V)';
   textarea.setAttribute('aria-label', `Contenuto di ${title}`);
   // shades applied lines behind the (transparent) textarea, which cannot color its own lines
   const backdrop = el('div', 'backdrop');
@@ -310,6 +312,16 @@ export function createInputPanel(
     const file = e.dataTransfer?.files[0];
     if (file) void load(file);
   });
+  // a paste anywhere on the card (except its own fields) replaces the whole content, like opening a file
+  root.addEventListener('paste', (e) => {
+    const target = e.target as HTMLElement;
+    if (target !== textarea && target.closest('input, select')) return;
+    const text = e.clipboardData?.getData('text/plain') ?? '';
+    if (!text) return;
+    e.preventDefault();
+    setModified(false);
+    show({ ...state, text, fileName: undefined });
+  });
 
   renderGutter();
 
@@ -344,24 +356,11 @@ export function createInputPanel(
     },
 
     replace(edit) {
+      // the textarea is read-only, so changes are set directly; undo is offered by the caller (Annulla)
       const before = textarea.value;
-      const expected = before.slice(0, edit.start) + edit.text + before.slice(edit.end);
-      textarea.focus();
-      textarea.setSelectionRange(edit.start, edit.end);
+      textarea.value = before.slice(0, edit.start) + edit.text + before.slice(edit.end);
       applying = true;
-      let undoable = false;
-      try {
-        // execCommand keeps the change in the browser undo stack (Ctrl+Z)
-        undoable = typeof document.execCommand === 'function' && document.execCommand('insertText', false, edit.text);
-      } catch {
-        undoable = false;
-      }
-      if (textarea.value !== expected) {
-        textarea.value = expected;
-        textarea.dispatchEvent(new Event('input'));
-      } else if (!undoable) {
-        textarea.dispatchEvent(new Event('input'));
-      }
+      textarea.dispatchEvent(new Event('input'));
       applying = false;
       setModified(true);
       marks = markEdit(before, textarea.value, marks);

@@ -273,7 +273,7 @@ describe('app', () => {
     expect(items()).toEqual(['aggiunta$.c4']);
     // the place in the list is kept: the next difference takes the resolved one's row
     expect(document.activeElement).toBe(document.querySelector('.diff-list li'));
-    expect(document.querySelector('.status')!.textContent).toBe("Riportato in File B. Ctrl+Z nell'editor per annullare.");
+    expect(document.querySelector('.status')!.textContent).toBe('Riportato in File B.Annulla');
     expect(document.querySelector<HTMLElement>('#input-b .modified')!.hidden).toBe(false);
 
     apply(0, 'B → A');
@@ -301,6 +301,60 @@ describe('app', () => {
     expect(signs()).toEqual(['', '', '']);
     // the applied marks are gone; line 2 now shows the new difference instead
     expect(shades()).toEqual(['', 'd-changed', '']);
+  });
+
+  it('cannot be typed into; a paste replaces the whole content', () => {
+    const ta = textareas()[0];
+    expect(ta.readOnly).toBe(true);
+    const paste = new Event('paste', { bubbles: true, cancelable: true });
+    Object.defineProperty(paste, 'clipboardData', { value: { getData: () => 'x: 1\n' } });
+    ta.dispatchEvent(paste);
+    vi.advanceTimersByTime(300);
+    expect(paste.defaultPrevented).toBe(true);
+    expect(ta.value).toBe('x: 1\n');
+  });
+
+  it('applies at the node, wherever the cursor is', () => {
+    // a browser's insertText writes at the current selection: if apply relied on it, a caret placed
+    // elsewhere by the user would receive the value and corrupt the file
+    const insertAtCaret = vi.fn((_cmd: string, _ui: boolean, text: string) => {
+      const ta = document.activeElement as HTMLTextAreaElement;
+      ta.setRangeText(text, ta.selectionStart, ta.selectionEnd, 'end');
+      return true;
+    });
+    const original = document.execCommand;
+    document.execCommand = insertAtCaret as unknown as typeof document.execCommand;
+    const caretAtStart = (ta: HTMLTextAreaElement) => {
+      ta.focus();
+      ta.setSelectionRange(0, 0); // far from line 2, where the change belongs
+    };
+    try {
+      type(0, 'a: 1\nb: 2\nc: 3\n');
+      type(1, 'a: 1\nb: 9\nc: 3\n');
+      caretAtStart(textareas()[1]);
+      apply(0, 'A → B');
+      expect(textareas()[1].value).toBe('a: 1\nb: 2\nc: 3\n');
+
+      type(1, 'a: 1\nb: 9\nc: 3\n');
+      caretAtStart(textareas()[0]);
+      apply(0, 'B → A');
+      expect(textareas()[0].value).toBe('a: 1\nb: 9\nc: 3\n');
+    } finally {
+      document.execCommand = original;
+    }
+    expect(insertAtCaret).not.toHaveBeenCalled();
+  });
+
+  it('undoes a single apply from the status line', () => {
+    type(0, 'a: 1\n');
+    type(1, 'a: 2\n');
+    apply(0, 'A → B');
+    expect(textareas()[1].value).toBe('a: 1\n');
+    const status = document.querySelector<HTMLElement>('.status')!;
+    [...status.querySelectorAll('button')].find((b) => b.textContent === 'Annulla')!.click();
+    vi.advanceTimersByTime(300);
+    expect(textareas()[1].value).toBe('a: 2\n');
+    expect(status.textContent).toBe('Riporto annullato.');
   });
 
   it('explains when a difference cannot be applied', () => {

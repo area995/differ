@@ -12,7 +12,7 @@ Ops/DevOps engineers on an internal team. Typical situation: comparing configura
 
 ## Product Purpose
 
-KV Diff is a semantic diff tool for key-value files (JSON and YAML) that runs in the browser. It compares the data model, not the text, so engineers see real differences (added or removed keys, changed values, type changes) without noise from formatting, key order or array order, unless they ask for it. Success means an engineer can tell at once whether two configs are equivalent, find each real difference, and fix it in place with confidence.
+Ledger (formerly KV Diff) is a semantic diff tool for key-value files (JSON and YAML) that runs in the browser. It compares the data model, not the text, so engineers see real differences (added or removed keys, changed values, type changes) without noise from formatting, key order or array order, unless they ask for it. Success means an engineer can tell at once whether two configs are equivalent, find each real difference, and fix it in place with confidence.
 
 ## Positioning
 
@@ -25,9 +25,9 @@ KV Diff is a semantic diff tool for key-value files (JSON and YAML) that runs in
 ## Operating Context
 
 - Internal team tool, not a public product.
-- Input: pasted text, file picker or drag-and-drop, one card per file (A, B, then C, D, …). Each card has **Testo** / **Albero** tabs.
+- Input: file picker, drag-and-drop or paste, one card per file (A, B, then C, D, …). The file text is read-only (scroll and select only, decided 2026-10-27): it changes only through apply actions, each undoable from the status line. Each card has **Testo** / **Albero** tabs.
 - Diffs recompute automatically as the user types (300 ms debounce).
-- Common neighbors in the workflow: text-diff tools, editors, Git, deploy pipelines. KV Diff sits beside them to answer whether two configs mean the same thing.
+- Common neighbors in the workflow: text-diff tools, editors, Git, deploy pipelines. Ledger sits beside them to answer whether two configs mean the same thing.
 
 ## Capabilities and Constraints
 
@@ -41,7 +41,7 @@ KV Diff is a semantic diff tool for key-value files (JSON and YAML) that runs in
 
 ## Brand Commitments
 
-- Name: **KV Diff**.
+- Name: **Ledger** (renamed from KV Diff on 2026-10-27; the name echoes the "Change Ledger" design idea: every difference is an entry to locate and copy).
 - Tagline in use: "Confronto semantico JSON / YAML. I file restano nel browser."
 - Voice: plain, technical, terse Italian. Describes what the tool does and makes no marketing claims.
 

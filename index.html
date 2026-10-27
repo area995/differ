@@ -3,12 +3,22 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>KV Diff</title>
+    <title>Ledger</title>
+    <script>
+      // applies a saved light/dark choice before the first paint (same key as src/ui/theme.ts)
+      try {
+        var theme = localStorage.getItem('ledger-theme');
+        if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
+      } catch (e) {}
+    </script>
   </head>
   <body>
-    <header>
-      <h1>KV Diff</h1>
-      <p class="tagline">Confronto semantico JSON / YAML. I file restano nel browser.</p>
+    <header class="page-head">
+      <div>
+        <h1>Ledger</h1>
+        <p class="tagline">Confronto semantico JSON / YAML. I file restano nel browser.</p>
+      </div>
+      <div id="theme"></div>
     </header>
     <section id="options" class="options"></section>
     <section id="inputs" class="inputs"></section>

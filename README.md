@@ -1,4 +1,4 @@
-# KV Diff
+# Ledger
 
 Confronto semantico tra file chiave-valore (JSON, YAML) nel browser. I file non lasciano mai il client.
 
@@ -16,6 +16,9 @@ Confronto semantico tra file chiave-valore (JSON, YAML) nel browser. I file non 
 
 ## Card dei file
 
+- Il testo è in sola lettura: si scorre e si seleziona per copiarlo, ma non si scrive. Il contenuto arriva da
+  **Apri file…**, dal trascinamento di un file sulla card o incollandolo (`Ctrl+V` con la card attiva), che
+  sostituisce tutto il contenuto.
 - Schede **Testo** / **Albero**: l'albero mostra il documento con nodi comprimibili (Espandi/Comprimi tutto);
   click su un nodo per tornare al testo con il nodo selezionato.
 - Icone: download per salvare il contenuto, cestino per rimuovere il file.
@@ -34,9 +37,10 @@ Confronto semantico tra file chiave-valore (JSON, YAML) nel browser. I file non 
 - Click su una differenza: il nodo viene selezionato in entrambi gli editor e le righe si evidenziano nel gutter.
 - Pulsanti `A → B` / `B → A`: riportano la modifica nell'altro file toccando solo il testo di quel nodo
   (valori, chiavi o elementi aggiunti/rimossi, righe di formattazione). Il risultato viene verificato prima di
-  applicarlo; se non è possibile farlo in modo sicuro compare un avviso. `Ctrl+Z` nell'editor annulla.
+  applicarlo; se non è possibile farlo in modo sicuro compare un avviso. **Annulla** nella riga di stato lo
+  ripristina.
 - Le righe cambiate da un riporto restano evidenziate in grigio nell'editor (`+` righe aggiunte, `−` righe
-  rimosse) finché il testo non viene modificato a mano.
+  rimosse) finché il contenuto non viene sostituito.
 - **Salva** su ogni pannello scarica il contenuto attuale.
 
 ## Sviluppo

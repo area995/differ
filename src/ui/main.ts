@@ -22,9 +22,13 @@ import { createInputPanel, type InputPanel, type InputState } from './input';
 import { renderMatrix } from './matrix';
 import { createOptionsBar } from './options';
 import { lineMarks, renderResult, renderWaiting } from './result';
+import { createThemeSwitch } from './theme';
 import { unionItems } from './tree-items';
 
 const byId = (id: string) => document.getElementById(id)!;
+
+const themeRoot = document.getElementById('theme');
+if (themeRoot) createThemeSwitch(themeRoot);
 
 const SAME_FORMAT_ONLY = 'Disponibile solo con file dello stesso formato';
 const ROOT_ONE_SIDE = 'Non disponibile quando la root è applicata solo ad alcuni file';
@@ -393,7 +397,7 @@ function renderMatrixView(
         const after = new Map([...before.keys()].map((s) => [s, s.input.text]));
         showStatus(`Riportato in ${[...before.keys()].map(title).join(', ')}.`, {
           label: 'Annulla tutto',
-          run: () => undoAll(before, after),
+          run: () => undoAll(before, after, 'Riporto annullato in tutti i file.'),
         });
       },
     },
@@ -430,20 +434,23 @@ function applyChange(entry: DiffEntry, direction: Direction, a: Loaded, b: Loade
   }
   showNotice(null);
   const target = direction === 'aToB' ? b : a;
+  const before = new Map([[target.slot, target.slot.input.text]]);
   target.slot.panel.replace(r.edit);
-  showStatus(`Riportato in ${title(target.slot)}. Ctrl+Z nell'editor per annullare.`);
+  // the editors are read-only, so the way back is offered here rather than through Ctrl+Z
+  const after = new Map([[target.slot, target.slot.input.text]]);
+  showStatus(`Riportato in ${title(target.slot)}.`, { label: 'Annulla', run: () => undoAll(before, after) });
   return true;
 }
 
-/** Puts back the texts changed by "Base → tutti", unless they were edited since. */
-function undoAll(before: Map<Slot, string>, after: Map<Slot, string>): void {
+/** Puts back the texts an apply changed, unless they were changed again since (another apply, a paste…). */
+function undoAll(before: Map<Slot, string>, after: Map<Slot, string>, done = 'Riporto annullato.'): void {
   const changed = [...before.keys()].some((s) => !slots.includes(s) || s.input.text !== after.get(s));
   if (changed) {
-    showNotice("I file sono cambiati dopo il riporto: annulla con Ctrl+Z in ciascun editor.");
+    showNotice('Il file è cambiato dopo il riporto: non si può più annullare.');
     return;
   }
   for (const [slot, text] of before) slot.panel.replace({ start: 0, end: slot.input.text.length, text });
-  showStatus('Riporto annullato in tutti i file.');
+  showStatus(done);
 }
 
 function missingIncludes(paths: Path[], loaded: Loaded[]): string[] {
