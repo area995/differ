@@ -98,10 +98,14 @@ h2 {
   color: var(--fg);
 }
 
-.opt-error {
+.root-msg {
   flex-basis: 100%;
-  color: var(--error);
+  color: var(--muted);
   font-size: 0.9rem;
+}
+
+.root-msg.error {
+  color: var(--error);
 }
 
 /* layout */

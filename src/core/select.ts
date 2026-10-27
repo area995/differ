@@ -31,6 +31,15 @@ export function parsePath(text: string): PathResult {
   return { ok: true, path };
 }
 
+export type Scoped = { a: Node; b: Node; inA: boolean; inB: boolean };
+
+/** Uses the node at `path` in each document that has it, the whole document otherwise. */
+export function applyRoot(a: Node, b: Node, path: Path): Scoped {
+  const rootA = path.length ? selectNode(a, path) : undefined;
+  const rootB = path.length ? selectNode(b, path) : undefined;
+  return { a: rootA ?? a, b: rootB ?? b, inA: !!rootA, inB: !!rootB };
+}
+
 export function selectNode(node: Node, path: Path): Node | undefined {
   let current: Node | undefined = node;
   for (const seg of path) {

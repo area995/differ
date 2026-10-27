@@ -3,12 +3,15 @@ import { detectFormat } from '../core/detect';
 import { diff } from '../core/diff';
 import { DEFAULT_OPTIONS, formatPath, type DiffOptions, type Format, type ParseResult } from '../core/model';
 import { parse } from '../core/parse';
-import { parsePath, selectNode } from '../core/select';
+import { applyRoot, parsePath, type Scoped } from '../core/select';
 import { createInputPanel, type InputState } from './input';
 import { createOptionsBar } from './options';
 import { renderResult } from './result';
 
 const byId = (id: string) => document.getElementById(id)!;
+
+const SAME_FORMAT_ONLY = 'Disponibile solo con file dello stesso formato';
+const ROOT_ONE_SIDE = 'Non disponibile quando la root è applicata a un solo file';
 
 let opts: DiffOptions = { ...DEFAULT_OPTIONS };
 let inputA: InputState = { text: '', choice: 'auto' };
@@ -46,24 +49,30 @@ function run(): void {
   panelB.setStatus(b?.format ?? null, b && !b.result.ok ? b.result.error : null);
 
   const sameFormat = !a || !b || a.format === b.format;
-  optionsBar.setWhitespaceEnabled(sameFormat, 'Disponibile solo con file dello stesso formato');
-
   const rootPath = parsePath(opts.root);
-  optionsBar.setRootError(rootPath.ok ? null : rootPath.error);
 
   if (!rootPath.ok || !a || !b || !a.result.ok || !b.result.ok) {
+    optionsBar.setRootMessage(rootPath.ok ? null : rootPath.error, 'error');
+    optionsBar.setWhitespaceEnabled(sameFormat, SAME_FORMAT_ONLY);
     renderResult(byId('result'), null);
     return;
   }
-  const nodeA = selectNode(a.result.node, rootPath.path);
-  const nodeB = selectNode(b.result.node, rootPath.path);
-  if (!nodeA || !nodeB) {
-    const missing = [nodeA ? '' : 'A', nodeB ? '' : 'B'].filter(Boolean).join(' e ');
-    optionsBar.setRootError(`Root ${formatPath(rootPath.path)} non trovata in ${missing}`);
-    renderResult(byId('result'), null);
-    return;
-  }
-  const raw = sameFormat ? { a: inputA.text, b: inputB.text } : undefined;
-  const entries = diff(nodeA, nodeB, opts, raw);
+  const scope = applyRoot(a.result.node, b.result.node, rootPath.path);
+  optionsBar.setRootMessage(rootMessage(formatPath(rootPath.path), scope), 'info');
+
+  // nesting changes the indentation of every line, so whitespace makes no sense on one side only
+  const oneSided = scope.inA !== scope.inB;
+  optionsBar.setWhitespaceEnabled(sameFormat && !oneSided, oneSided ? ROOT_ONE_SIDE : SAME_FORMAT_ONLY);
+
+  const raw = sameFormat && !oneSided ? { a: inputA.text, b: inputB.text } : undefined;
+  const entries = diff(scope.a, scope.b, opts, raw);
   renderResult(byId('result'), { textA: inputA.text, textB: inputB.text, entries });
+}
+
+function rootMessage(path: string, scope: Scoped): string | null {
+  if (path === '$') return null;
+  if (scope.inA && scope.inB) return `Root ${path} applicata a A e B`;
+  if (scope.inA) return `Root ${path} applicata solo a A: confrontata con l'intero file B`;
+  if (scope.inB) return `Root ${path} applicata solo a B: confrontata con l'intero file A`;
+  return `Root ${path} non trovata: confronto tra i file interi`;
 }

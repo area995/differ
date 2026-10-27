@@ -14,7 +14,7 @@ const CHECKS: { key: BoolKey; label: string; title: string }[] = [
 
 export type OptionsBar = {
   setWhitespaceEnabled(enabled: boolean, reason: string): void;
-  setRootError(message: string | null): void;
+  setRootMessage(message: string | null, kind: 'info' | 'error'): void;
 };
 
 export function createOptionsBar(
@@ -71,9 +71,9 @@ export function createOptionsBar(
   field.append(fieldInput);
   root.append(field);
 
-  const rootError = el('div', 'opt-error');
-  rootError.hidden = true;
-  root.append(rootError);
+  const rootMessage = el('div', 'root-msg');
+  rootMessage.hidden = true;
+  root.append(rootMessage);
 
   return {
     setWhitespaceEnabled(enabled, reason) {
@@ -82,9 +82,10 @@ export function createOptionsBar(
       label.classList.toggle('disabled', !enabled);
       label.title = enabled ? CHECKS[2].title : reason;
     },
-    setRootError(message) {
-      rootError.hidden = !message;
-      rootError.textContent = message ?? '';
+    setRootMessage(message, kind) {
+      rootMessage.hidden = !message;
+      rootMessage.textContent = message ?? '';
+      rootMessage.classList.toggle('error', kind === 'error');
     },
   };
 }

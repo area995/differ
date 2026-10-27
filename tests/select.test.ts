@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { formatPath, toPlain, type Path } from '../src/core/model';
-import { parsePath, selectNode } from '../src/core/select';
+import { applyRoot, parsePath, selectNode } from '../src/core/select';
 import { node } from './helpers';
 
 function path(text: string): Path {
@@ -58,5 +58,29 @@ describe('selectNode', () => {
     expect(selectNode(doc, ['server', 0])).toBeUndefined();
     expect(selectNode(doc, ['users', { field: 'name', value: 'bob' }])).toBeUndefined();
     expect(selectNode(doc, ['server', 'ports', 1, 'x'])).toBeUndefined();
+  });
+});
+
+describe('applyRoot', () => {
+  const wrapped = node('config:\n  a: 1\n');
+  const bare = node('a: 2\n');
+
+  it('uses the root value only in the file that has it', () => {
+    const s = applyRoot(wrapped, bare, ['config']);
+    expect(toPlain(s.a)).toEqual({ a: 1 });
+    expect(s.b).toBe(bare);
+    expect([s.inA, s.inB]).toEqual([true, false]);
+    expect(applyRoot(bare, wrapped, ['config'])).toMatchObject({ a: bare, inA: false, inB: true });
+  });
+
+  it('uses the root value in both files when both have it', () => {
+    const s = applyRoot(wrapped, node('config:\n  a: 3\n'), ['config']);
+    expect([toPlain(s.a), toPlain(s.b)]).toEqual([{ a: 1 }, { a: 3 }]);
+    expect([s.inA, s.inB]).toEqual([true, true]);
+  });
+
+  it('falls back to the whole documents when the root is missing or empty', () => {
+    expect(applyRoot(wrapped, bare, ['nope'])).toEqual({ a: wrapped, b: bare, inA: false, inB: false });
+    expect(applyRoot(wrapped, bare, [])).toEqual({ a: wrapped, b: bare, inA: false, inB: false });
   });
 });

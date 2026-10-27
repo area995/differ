@@ -29,8 +29,8 @@ function setRoot(text: string): void {
   vi.advanceTimersByTime(300);
 }
 
-function rootError(): string {
-  const e = document.querySelector<HTMLElement>('.opt-error')!;
+function rootMessage(): string {
+  const e = document.querySelector<HTMLElement>('.root-msg')!;
   return e.hidden ? '' : (e.textContent ?? '');
 }
 
@@ -96,24 +96,32 @@ describe('app', () => {
     expect(document.querySelector('.pane[data-side="B"] [data-line="2"] .code')?.textContent).toBe('····b:·1');
   });
 
-  it('compares only the subtree selected as root', () => {
-    type(0, 'server:\n  port: 1\nother: 1\n');
-    type(1, 'server:\n  port: 2\nother: 2\n');
-    expect(items()).toHaveLength(2);
+  it('uses the root value in the files that have it', () => {
+    type(0, 'config:\n  port: 1\n  host: a\n');
+    type(1, 'port: 2\nhost: a\n');
+    expect(items()).toHaveLength(3);
 
-    setRoot('server');
+    setRoot('config');
     expect(items()).toEqual(['modificata$.port1 → 2']);
+    expect(rootMessage()).toBe("Root $.config applicata solo a A: confrontata con l'intero file B");
+    expect(option('Spazi e tabulazioni').disabled).toBe(true);
     expect(document.querySelector('.pane[data-side="A"] [data-line="2"]')!.className).toContain('d-changed');
 
-    setRoot('$.nope');
-    expect(rootError()).toBe('Root $.nope non trovata in A e B');
-    expect(document.getElementById('result')!.textContent).toBe('');
+    type(1, 'config:\n  port: 2\n  host: a\n');
+    expect(items()).toEqual(['modificata$.port1 → 2']);
+    expect(rootMessage()).toBe('Root $.config applicata a A e B');
+    expect(option('Spazi e tabulazioni').disabled).toBe(false);
+
+    setRoot('nope');
+    expect(rootMessage()).toBe('Root $.nope non trovata: confronto tra i file interi');
+    expect(items()).toEqual(['modificata$.config.port1 → 2']);
 
     setRoot('server[');
-    expect(rootError()).toBe('Root non valida: server[');
+    expect(rootMessage()).toBe('Root non valida: server[');
+    expect(document.querySelector('.root-msg')!.classList.contains('error')).toBe(true);
+    expect(document.getElementById('result')!.textContent).toBe('');
 
     setRoot('');
-    expect(rootError()).toBe('');
-    expect(items()).toHaveLength(2);
+    expect(rootMessage()).toBe('');
   });
 });
