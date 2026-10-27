@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { formatPath, toPlain, type Path } from '../src/core/model';
-import { applyRoot, parsePath, selectNode } from '../src/core/select';
+import { applyRoot, parsePath, parsePathList, selectNode } from '../src/core/select';
 import { node } from './helpers';
 
 function path(text: string): Path {
@@ -82,5 +82,29 @@ describe('applyRoot', () => {
   it('falls back to the whole documents when the root is missing or empty', () => {
     expect(applyRoot(wrapped, bare, ['nope'])).toEqual({ a: wrapped, b: bare, inA: false, inB: false });
     expect(applyRoot(wrapped, bare, [])).toEqual({ a: wrapped, b: bare, inA: false, inB: false });
+  });
+});
+
+describe('parsePathList', () => {
+  const paths = (text: string) => {
+    const r = parsePathList(text);
+    if (!r.ok) throw new Error(r.error);
+    return r.paths;
+  };
+
+  it('returns no paths for empty input', () => {
+    expect(paths('  ')).toEqual([]);
+  });
+
+  it('splits on commas and newlines, dropping empty parts', () => {
+    expect(paths('server, db.pool\r\n\nlogging,,')).toEqual([['server'], ['db', 'pool'], ['logging']]);
+  });
+
+  it('does not split inside brackets or quotes', () => {
+    expect(paths('["a,b"], users[name=x,y]')).toEqual([['a,b'], ['users', { field: 'name', value: 'x,y' }]]);
+  });
+
+  it('reports the first invalid part', () => {
+    expect(parsePathList('a, b[')).toEqual({ ok: false, error: 'Includi non valido: b[' });
   });
 });

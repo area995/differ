@@ -31,6 +31,48 @@ export function parsePath(text: string): PathResult {
   return { ok: true, path };
 }
 
+export type PathListResult = { ok: true; paths: Path[] } | { ok: false; error: string };
+
+/** Parses comma- or newline-separated paths; empty parts are ignored. */
+export function parsePathList(text: string): PathListResult {
+  const paths: Path[] = [];
+  for (const part of splitList(text)) {
+    const r = parsePath(part);
+    if (!r.ok) return { ok: false, error: `Includi non valido: ${part}` };
+    paths.push(r.path);
+  }
+  return { ok: true, paths };
+}
+
+/** Splits on commas and newlines outside brackets and quotes. */
+function splitList(text: string): string[] {
+  const parts: string[] = [];
+  let current = '';
+  let depth = 0;
+  let quoted = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (quoted) {
+      if (c === '\\') {
+        current += c + (text[i + 1] ?? '');
+        i++;
+        continue;
+      }
+      if (c === '"') quoted = false;
+    } else if (c === '"') quoted = true;
+    else if (c === '[') depth++;
+    else if (c === ']') depth = Math.max(0, depth - 1);
+    else if ((c === ',' || c === '\n') && depth === 0) {
+      parts.push(current);
+      current = '';
+      continue;
+    }
+    current += c;
+  }
+  parts.push(current);
+  return parts.map((p) => p.trim()).filter(Boolean);
+}
+
 export type Scoped = { a: Node; b: Node; inA: boolean; inB: boolean };
 
 /** Uses the node at `path` in each document that has it, the whole document otherwise. */
