@@ -14,6 +14,8 @@ export type InputPanel = {
   setStatus(format: Format | null, error: ParseError | null): void;
   /** Selects `range` in the editor, scrolls to it and marks its lines in the gutter. */
   reveal(range: Range | null): void;
+  /** Loads a file into this card, replacing its content. */
+  load(file: File): Promise<void>;
   /** Applies an edit through the editor, so that the browser can undo it, and selects the new text. */
   replace(edit: Edit): void;
   setControls(state: { base: boolean; removable: boolean }): void;
@@ -27,7 +29,8 @@ export type InputPanel = {
   isModified(): boolean;
 };
 
-export type PanelControls = { onBase(): void; onRemove(): void };
+/** `onMoreFiles`: the files after the first of a multiple selection or drop, for the other cards. */
+export type PanelControls = { onBase(): void; onRemove(): void; onMoreFiles(files: File[]): void };
 
 const MAX_SIZE = 5 * 1024 * 1024;
 
@@ -64,11 +67,13 @@ export function createInputPanel(
   const fileInput = el('input');
   fileInput.type = 'file';
   fileInput.accept = '.json,.yaml,.yml';
+  fileInput.multiple = true;
   fileInput.hidden = true;
   // a real button, so that the picker can be opened from the keyboard
   const fileButton = el('button', 'file-btn');
   fileButton.type = 'button';
   fileButton.textContent = 'Apri file…';
+  fileButton.title = 'Apri uno o più file: i successivi vanno nelle card vuote, aggiungendone se servono';
   fileButton.addEventListener('click', () => fileInput.click());
   const save = iconButton('download', 'save', 'Salva', 'Scarica il contenuto attuale');
   const fileName = el('span', 'file-name');
@@ -286,9 +291,14 @@ export function createInputPanel(
     state.label = labelInput.value.trim();
     emit();
   });
+  /** The first file goes in this card, the others to the caller (the next empty cards). */
+  const loadAll = (files: File[]) => {
+    const [first, ...rest] = files;
+    if (first) void load(first);
+    if (rest.length) controls?.onMoreFiles(rest);
+  };
   fileInput.addEventListener('change', () => {
-    const file = fileInput.files?.[0];
-    if (file) void load(file);
+    loadAll([...(fileInput.files ?? [])]);
     fileInput.value = '';
   });
   save.addEventListener('click', () => {
@@ -308,9 +318,10 @@ export function createInputPanel(
   root.addEventListener('dragleave', () => root.classList.remove('drop'));
   root.addEventListener('drop', (e) => {
     e.preventDefault();
+    // handled here: the page-level drop would place the files again
+    e.stopPropagation();
     root.classList.remove('drop');
-    const file = e.dataTransfer?.files[0];
-    if (file) void load(file);
+    loadAll([...(e.dataTransfer?.files ?? [])]);
   });
   // a paste anywhere on the card (except its own fields) replaces the whole content, like opening a file
   root.addEventListener('paste', (e) => {
@@ -337,6 +348,8 @@ export function createInputPanel(
         renderGutter(true);
       }
     },
+
+    load,
 
     reveal(range) {
       current = range ? [range.start.line, range.end.line] : null;

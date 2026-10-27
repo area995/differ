@@ -129,6 +129,14 @@ window.addEventListener('beforeunload', (event) => {
   if (slots.some((s) => s.panel.isModified())) event.preventDefault();
 });
 
+// files dropped outside a card would make the browser open them and leave the page: place them instead
+document.addEventListener('dragover', (event) => event.preventDefault());
+document.addEventListener('drop', (event) => {
+  event.preventDefault();
+  const files = [...(event.dataTransfer?.files ?? [])];
+  if (files.length) distribute(files, null);
+});
+
 const optionsBar = createOptionsBar(byId('options'), opts, (o) => {
   opts = o;
   schedule();
@@ -166,6 +174,7 @@ function addSlot(): Slot | null {
         schedule();
       },
       onRemove: () => removeSlot(slot),
+      onMoreFiles: (files) => distribute(files, slot),
     },
   );
   const slot: Slot = { letter, root, panel, input: { text: '', choice: 'auto' } };
@@ -205,6 +214,27 @@ function removeSlot(slot: Slot): void {
   });
   // the removed card took the focus with it: the way back is the useful next stop
   restore?.focus();
+}
+
+/**
+ * Puts each file in the next empty card after `from` (from the first card when null), adding cards as needed.
+ * Cards with content are never overwritten.
+ */
+function distribute(files: File[], from: Slot | null): void {
+  let i = from ? slots.indexOf(from) + 1 : 0;
+  const skipped: string[] = [];
+  for (const file of files) {
+    while (i < slots.length && slots[i].input.text.trim() !== '') i++;
+    const slot = i < slots.length ? slots[i] : addSlot();
+    if (!slot) {
+      skipped.push(file.name);
+      continue;
+    }
+    void slot.panel.load(file);
+    i = slots.indexOf(slot) + 1;
+  }
+  if (skipped.length) showNotice(`Massimo ${LETTERS.length} file: non caricati ${skipped.join(', ')}`);
+  schedule();
 }
 
 function refreshControls(): void {

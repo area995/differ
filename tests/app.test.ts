@@ -642,4 +642,31 @@ describe('app with more than two files', () => {
     expect(name.title).toBe('config.prod.yaml');
     vi.advanceTimersByTime(300);
   });
+
+  it('places several files at once: first in the card, the rest in empty or new cards', async () => {
+    const values = () => [...textareas()].map((t) => t.value);
+    const files = (...names: string[]) => names.map((n) => new File([`${n}: 1\n`], `${n}.yaml`));
+    // every card has content, so extra files need new cards
+    textareas().forEach((t, i) => {
+      if (!t.value) type(i, 'z: 0\n');
+    });
+    const start = textareas().length;
+
+    // the picker of card A takes several files
+    const input = document.querySelector<HTMLInputElement>('#input-a input[type="file"]')!;
+    expect(input.multiple).toBe(true);
+    Object.defineProperty(input, 'files', { value: files('p', 'q'), configurable: true });
+    input.dispatchEvent(new Event('change'));
+    await vi.waitFor(() => expect(values()[0]).toBe('p: 1\n'));
+    await vi.waitFor(() => expect(values().slice(start)).toEqual(['q: 1\n']));
+
+    // a drop outside the cards does not leave the page: the files go to new cards, nothing is overwritten
+    const before = values();
+    const drop = new Event('drop', { bubbles: true, cancelable: true });
+    Object.defineProperty(drop, 'dataTransfer', { value: { files: files('r', 's') } });
+    document.body.dispatchEvent(drop);
+    expect(drop.defaultPrevented).toBe(true);
+    await vi.waitFor(() => expect(values()).toEqual([...before, 'r: 1\n', 's: 1\n']));
+    vi.advanceTimersByTime(300);
+  });
 });
