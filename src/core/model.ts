@@ -41,6 +41,7 @@ export type DiffOptions = {
   ignoreArrayOrder: boolean;
   arrayKeyField: string;
   looseTypes: boolean;
+  root: string;
 };
 
 export const DEFAULT_OPTIONS: DiffOptions = {
@@ -51,6 +52,7 @@ export const DEFAULT_OPTIONS: DiffOptions = {
   ignoreArrayOrder: false,
   arrayKeyField: '',
   looseTypes: false,
+  root: '',
 };
 
 export type ParseError = { message: string; pos: Pos };

@@ -22,6 +22,18 @@ function toggle(label: string): void {
   vi.advanceTimersByTime(300);
 }
 
+function setRoot(text: string): void {
+  const input = document.querySelector<HTMLInputElement>('#options input[placeholder^="tutto"]')!;
+  input.value = text;
+  input.dispatchEvent(new Event('input'));
+  vi.advanceTimersByTime(300);
+}
+
+function rootError(): string {
+  const e = document.querySelector<HTMLElement>('.opt-error')!;
+  return e.hidden ? '' : (e.textContent ?? '');
+}
+
 beforeAll(async () => {
   vi.useFakeTimers();
   document.body.innerHTML = `
@@ -82,5 +94,26 @@ describe('app', () => {
     toggle('Spazi e tabulazioni');
     expect(items()).toEqual(['formattazione$.a.bindentazione 2 → 4']);
     expect(document.querySelector('.pane[data-side="B"] [data-line="2"] .code')?.textContent).toBe('····b:·1');
+  });
+
+  it('compares only the subtree selected as root', () => {
+    type(0, 'server:\n  port: 1\nother: 1\n');
+    type(1, 'server:\n  port: 2\nother: 2\n');
+    expect(items()).toHaveLength(2);
+
+    setRoot('server');
+    expect(items()).toEqual(['modificata$.port1 → 2']);
+    expect(document.querySelector('.pane[data-side="A"] [data-line="2"]')!.className).toContain('d-changed');
+
+    setRoot('$.nope');
+    expect(rootError()).toBe('Root $.nope non trovata in A e B');
+    expect(document.getElementById('result')!.textContent).toBe('');
+
+    setRoot('server[');
+    expect(rootError()).toBe('Root non valida: server[');
+
+    setRoot('');
+    expect(rootError()).toBe('');
+    expect(items()).toHaveLength(2);
   });
 });

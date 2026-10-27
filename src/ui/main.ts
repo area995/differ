@@ -1,8 +1,9 @@
 import '../styles.css';
 import { detectFormat } from '../core/detect';
 import { diff } from '../core/diff';
-import { DEFAULT_OPTIONS, type DiffOptions, type Format, type ParseResult } from '../core/model';
+import { DEFAULT_OPTIONS, formatPath, type DiffOptions, type Format, type ParseResult } from '../core/model';
 import { parse } from '../core/parse';
+import { parsePath, selectNode } from '../core/select';
 import { createInputPanel, type InputState } from './input';
 import { createOptionsBar } from './options';
 import { renderResult } from './result';
@@ -47,11 +48,22 @@ function run(): void {
   const sameFormat = !a || !b || a.format === b.format;
   optionsBar.setWhitespaceEnabled(sameFormat, 'Disponibile solo con file dello stesso formato');
 
-  if (!a || !b || !a.result.ok || !b.result.ok) {
+  const rootPath = parsePath(opts.root);
+  optionsBar.setRootError(rootPath.ok ? null : rootPath.error);
+
+  if (!rootPath.ok || !a || !b || !a.result.ok || !b.result.ok) {
+    renderResult(byId('result'), null);
+    return;
+  }
+  const nodeA = selectNode(a.result.node, rootPath.path);
+  const nodeB = selectNode(b.result.node, rootPath.path);
+  if (!nodeA || !nodeB) {
+    const missing = [nodeA ? '' : 'A', nodeB ? '' : 'B'].filter(Boolean).join(' e ');
+    optionsBar.setRootError(`Root ${formatPath(rootPath.path)} non trovata in ${missing}`);
     renderResult(byId('result'), null);
     return;
   }
   const raw = sameFormat ? { a: inputA.text, b: inputB.text } : undefined;
-  const entries = diff(a.result.node, b.result.node, opts, raw);
+  const entries = diff(nodeA, nodeB, opts, raw);
   renderResult(byId('result'), { textA: inputA.text, textB: inputB.text, entries });
 }

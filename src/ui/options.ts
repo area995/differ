@@ -1,7 +1,7 @@
 import type { DiffOptions } from '../core/model';
 import { el } from './dom';
 
-type BoolKey = Exclude<keyof DiffOptions, 'arrayKeyField'>;
+type BoolKey = Exclude<keyof DiffOptions, 'arrayKeyField' | 'root'>;
 
 const CHECKS: { key: BoolKey; label: string; title: string }[] = [
   { key: 'keys', label: 'Differenze chiavi', title: 'Chiavi aggiunte o rimosse' },
@@ -12,7 +12,10 @@ const CHECKS: { key: BoolKey; label: string; title: string }[] = [
   { key: 'looseTypes', label: 'Tipi laschi', title: '8080 uguale a "8080", true uguale a "true"' },
 ];
 
-export type OptionsBar = { setWhitespaceEnabled(enabled: boolean, reason: string): void };
+export type OptionsBar = {
+  setWhitespaceEnabled(enabled: boolean, reason: string): void;
+  setRootError(message: string | null): void;
+};
 
 export function createOptionsBar(
   root: HTMLElement,
@@ -22,6 +25,19 @@ export function createOptionsBar(
   const opts = { ...initial };
   const labels = new Map<BoolKey, HTMLLabelElement>();
   const inputs = new Map<BoolKey, HTMLInputElement>();
+
+  const rootInput = el('input');
+  rootInput.type = 'text';
+  rootInput.placeholder = 'tutto il documento (es. $.server)';
+  rootInput.value = opts.root;
+  rootInput.addEventListener('input', () => {
+    opts.root = rootInput.value;
+    onChange({ ...opts });
+  });
+  const rootLabel = el('label', 'opt');
+  rootLabel.title = 'Path del nodo da confrontare in entrambi i file. Si può copiare dalla lista differenze.';
+  rootLabel.append('Root', rootInput);
+  root.append(rootLabel);
 
   const fieldInput = el('input');
   fieldInput.type = 'text';
@@ -55,12 +71,20 @@ export function createOptionsBar(
   field.append(fieldInput);
   root.append(field);
 
+  const rootError = el('div', 'opt-error');
+  rootError.hidden = true;
+  root.append(rootError);
+
   return {
     setWhitespaceEnabled(enabled, reason) {
       const label = labels.get('whitespace')!;
       inputs.get('whitespace')!.disabled = !enabled;
       label.classList.toggle('disabled', !enabled);
       label.title = enabled ? CHECKS[2].title : reason;
+    },
+    setRootError(message) {
+      rootError.hidden = !message;
+      rootError.textContent = message ?? '';
     },
   };
 }

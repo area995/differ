@@ -98,6 +98,12 @@ h2 {
   color: var(--fg);
 }
 
+.opt-error {
+  flex-basis: 100%;
+  color: var(--error);
+  font-size: 0.9rem;
+}
+
 /* layout */
 .inputs,
 .panes {
