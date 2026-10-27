@@ -1,8 +1,11 @@
 import { markEdit, noMarks } from '../core/linemarks';
-import type { Format, ParseError, Range } from '../core/model';
+import type { Format, Node, ParseError, Range } from '../core/model';
 import type { Edit } from '../core/patch';
 import { toOffset } from '../core/text';
 import { el } from './dom';
+import { iconButton } from './icons';
+import { renderTree, setAllExpanded } from './tree';
+import { documentItems } from './tree-items';
 
 export type FormatChoice = 'auto' | Format;
 export type InputState = { text: string; fileName?: string; choice: FormatChoice };
@@ -13,6 +16,8 @@ export type InputPanel = {
   /** Applies an edit through the editor, so that the browser can undo it, and selects the new text. */
   replace(edit: Edit): void;
   setControls(state: { base: boolean; removable: boolean }): void;
+  /** The parsed document for the tree tab, or null with the reason shown instead. */
+  setTree(node: Node | null, message: string): void;
 };
 
 export type PanelControls = { onBase(): void; onRemove(): void };
@@ -48,10 +53,7 @@ export function createInputPanel(
   fileInput.hidden = true;
   const fileButton = el('label', 'file-btn');
   fileButton.append('Apri file…', fileInput);
-  const save = el('button', 'save');
-  save.type = 'button';
-  save.textContent = 'Salva';
-  save.title = 'Scarica il contenuto attuale';
+  const save = iconButton('download', 'save', 'Salva', 'Scarica il contenuto attuale');
   const fileName = el('span', 'file-name');
   fileName.hidden = true;
   const head = el('div', 'panel-head');
@@ -63,10 +65,7 @@ export function createInputPanel(
   const baseLabel = el('label', 'base-pick');
   baseLabel.title = 'Confronta gli altri file con questo';
   baseLabel.append(baseInput, 'Base');
-  const remove = el('button', 'remove');
-  remove.type = 'button';
-  remove.textContent = '×';
-  remove.title = 'Rimuovi questo file dal confronto';
+  const remove = iconButton('trash', 'remove', 'Rimuovi file', 'Rimuovi questo file dal confronto');
   remove.hidden = true;
   if (controls) {
     baseInput.addEventListener('change', () => controls.onBase());
@@ -91,7 +90,65 @@ export function createInputPanel(
 
   const error = el('div', 'error');
   error.hidden = true;
-  root.append(head, editor, error);
+
+  // read-only tree of the document, as an alternative to the text
+  let tree: Node | null = null;
+  let treeMessage = 'Nessun contenuto';
+  const expanded = new Map<string, boolean>();
+  const treeView = el('div', 'tree-view');
+  treeView.hidden = true;
+  const treeTools = el('div', 'tree-tools');
+  const treeBody = el('div', 'tree-body');
+  treeView.append(treeTools, treeBody);
+  const renderTreeView = () => {
+    if (treeView.hidden) return;
+    const items = tree ? documentItems(tree) : [];
+    treeTools.hidden = !tree;
+    if (!tree) {
+      treeBody.textContent = treeMessage;
+      return;
+    }
+    renderTree(treeBody, items, {
+      expanded,
+      defaultDepth: 2,
+      onSelect: (item) => {
+        showTab('text');
+        if (item.range) panel.reveal(item.range);
+      },
+    });
+  };
+  for (const [label, open] of [
+    ['Espandi tutto', true],
+    ['Comprimi tutto', false],
+  ] as const) {
+    const b = el('button');
+    b.type = 'button';
+    b.textContent = label;
+    b.addEventListener('click', () => {
+      if (tree) setAllExpanded(documentItems(tree), expanded, open);
+      renderTreeView();
+    });
+    treeTools.append(b);
+  }
+
+  const tabs = el('div', 'tabs');
+  const tabButtons = (['text', 'tree'] as const).map((name) => {
+    const b = el('button');
+    b.type = 'button';
+    b.textContent = name === 'text' ? 'Testo' : 'Albero';
+    b.addEventListener('click', () => showTab(name));
+    tabs.append(b);
+    return b;
+  });
+  const showTab = (name: 'text' | 'tree') => {
+    editor.hidden = name !== 'text';
+    treeView.hidden = name !== 'tree';
+    tabButtons.forEach((b, i) => b.setAttribute('aria-selected', String((i === 0) === (name === 'text'))));
+    renderTreeView();
+  };
+  showTab('text');
+
+  root.append(head, tabs, editor, treeView, error);
 
   let lineCount = -1;
   let errorLine = 0;
@@ -187,7 +244,7 @@ export function createInputPanel(
 
   renderGutter();
 
-  return {
+  const panel: InputPanel = {
     setStatus(nextFormat, err) {
       format = nextFormat;
       detected.textContent = nextFormat && state.choice === 'auto' ? `rilevato: ${nextFormat.toUpperCase()}` : '';
@@ -241,5 +298,12 @@ export function createInputPanel(
       renderGutter(true);
       textarea.setSelectionRange(edit.start, edit.start + edit.text.length);
     },
+
+    setTree(node, message) {
+      tree = node;
+      treeMessage = message;
+      renderTreeView();
+    },
   };
+  return panel;
 }

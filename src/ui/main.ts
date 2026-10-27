@@ -120,6 +120,10 @@ function run(): void {
   for (const slot of slots) {
     const a = analyze(slot.input);
     slot.panel.setStatus(a?.format ?? null, a && !a.result.ok ? a.result.error : null);
+    slot.panel.setTree(
+      a?.result.ok ? a.result.node : null,
+      a ? "Correggi gli errori di sintassi per vedere l'albero" : 'Nessun contenuto',
+    );
     if (a) filled.push({ slot, a });
   }
   const sameFormat = new Set(filled.map((f) => f.a.format)).size <= 1;

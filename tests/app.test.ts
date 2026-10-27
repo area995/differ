@@ -357,6 +357,54 @@ describe('app with more than two files', () => {
     expect(document.querySelector<HTMLElement>('#input-a .remove')!.hidden).toBe(true);
   });
 
+  it('uses icons for save and remove', () => {
+    for (const [selector, label] of [
+      ['#input-a .save', 'Salva'],
+      ['#input-a .remove', 'Rimuovi file'],
+    ]) {
+      const button = document.querySelector(selector)!;
+      expect(button.querySelector('svg')).not.toBeNull();
+      expect(button.getAttribute('aria-label')).toBe(label);
+    }
+  });
+
+  it('shows each document as a collapsible tree', () => {
+    const card = '#input-b';
+    const q = <T extends Element>(s: string) => document.querySelector<T>(`${card} ${s}`)!;
+    const tab = (label: string) =>
+      [...document.querySelectorAll<HTMLButtonElement>(`${card} .tabs button`)].find((b) => b.textContent === label)!;
+    const shown = (id: string) => {
+      for (let n: HTMLElement | null = q<HTMLElement>(`.tree-row[data-id="${id}"]`); n; n = n.parentElement) {
+        if (n.hidden) return false;
+      }
+      return true;
+    };
+
+    type(1, 'server:\n  tls:\n    cert:\n      path: x\nname: x\n');
+    tab('Albero').click();
+    expect(q<HTMLElement>('.editor').hidden).toBe(true);
+    expect(shown('$.server.tls.cert')).toBe(true);
+    expect(shown('$.server.tls.cert.path')).toBe(false);
+    expect(q('.tree-row[data-id="$.server"]').textContent).toContain('{1}');
+
+    [...document.querySelectorAll<HTMLButtonElement>(`${card} .tree-tools button`)].find((b) => b.textContent === 'Espandi tutto')!.click();
+    expect(shown('$.server.tls.cert.path')).toBe(true);
+    [...document.querySelectorAll<HTMLButtonElement>(`${card} .tree-tools button`)].find((b) => b.textContent === 'Comprimi tutto')!.click();
+    expect(shown('$.server.tls')).toBe(false);
+
+    q<HTMLElement>('.tree-row[data-id="$.name"] .key').click();
+    expect(q<HTMLElement>('.editor').hidden).toBe(false);
+    expect(selected(textareas()[1])).toBe('name: x');
+  });
+
+  it('explains why the tree is empty', () => {
+    type(1, 'a: [1\n');
+    [...document.querySelectorAll<HTMLButtonElement>('#input-b .tabs button')].find((b) => b.textContent === 'Albero')!.click();
+    expect(document.querySelector('#input-b .tree-view')!.textContent).toContain('Correggi');
+    [...document.querySelectorAll<HTMLButtonElement>('#input-b .tabs button')].find((b) => b.textContent === 'Testo')!.click();
+    type(1, 'a: 2\n');
+  });
+
   it('shows the name of a loaded file on its card', async () => {
     const name = document.querySelector<HTMLElement>('#input-a .file-name')!;
     expect(name.hidden).toBe(true);
