@@ -405,6 +405,50 @@ describe('app with more than two files', () => {
     type(1, 'a: 2\n');
   });
 
+  it('picks included subtrees from the union of the files', () => {
+    const picker = () => document.querySelector<HTMLElement>('.include-picker')!;
+    const box = (id: string) =>
+      picker().querySelector<HTMLInputElement>(`.tree-row[data-id="${id}"] input[type=checkbox]`)!;
+    const check = (id: string) => {
+      box(id).click();
+      vi.advanceTimersByTime(300);
+    };
+    const field = () => document.querySelector<HTMLInputElement>('#options input[placeholder^="tutti i"]')!;
+
+    type(0, 'server:\n  port: 1\ndb:\n  pool: 5\n');
+    type(1, 'server:\n  port: 2\nlog: x\n');
+    expect(picker().hidden).toBe(true);
+    document.querySelector<HTMLButtonElement>('.include-pick')!.click();
+    expect(picker().hidden).toBe(false);
+    expect([...picker().querySelectorAll('.tree-row')].map((r) => r.getAttribute('data-id'))).toEqual([
+      '$.server',
+      '$.server.port',
+      '$.db',
+      '$.db.pool',
+      '$.log',
+    ]);
+    expect(picker().querySelector('.tree-row[data-id="$.db"] .note')!.textContent).toBe('solo in A');
+    expect(picker().querySelector('.tree-row[data-id="$.log"] .note')!.textContent).toBe('solo in B');
+
+    check('$.server.port');
+    expect(field().value).toBe('$.server.port');
+    expect(items()).toEqual(['modificata$.server.port1 → 2']);
+
+    check('$.server');
+    expect(field().value).toBe('$.server');
+    expect([box('$.server.port').checked, box('$.server.port').disabled]).toEqual([true, true]);
+
+    check('$.server');
+    expect(field().value).toBe('');
+    expect(items()).toHaveLength(3);
+
+    setInclude('db');
+    expect(box('$.db').checked).toBe(true);
+    setInclude('');
+    document.querySelector<HTMLButtonElement>('.include-pick')!.click();
+    expect(picker().hidden).toBe(true);
+  });
+
   it('shows the name of a loaded file on its card', async () => {
     const name = document.querySelector<HTMLElement>('#input-a .file-name')!;
     expect(name.hidden).toBe(true);

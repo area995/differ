@@ -16,11 +16,13 @@ import { buildMatrix, type MatrixRow } from '../core/multi';
 import { parse } from '../core/parse';
 import { PATCH_ERROR, applyEntry, locateEntry, patchSupport, type Direction, type PatchDoc } from '../core/patch';
 import { parsePath, parsePathList, selectNode } from '../core/select';
+import { buildUnion } from '../core/union';
 import { el } from './dom';
 import { createInputPanel, type InputPanel, type InputState } from './input';
 import { renderMatrix } from './matrix';
 import { createOptionsBar } from './options';
 import { renderResult } from './result';
+import { unionItems } from './tree-items';
 
 const byId = (id: string) => document.getElementById(id)!;
 
@@ -135,10 +137,14 @@ function run(): void {
     const syntaxError = !rootPath.ok ? rootPath.error : !includes.ok ? includes.error : null;
     optionsBar.setScopeMessage(syntaxError, 'error');
     optionsBar.setWhitespaceEnabled(sameFormat, SAME_FORMAT_ONLY);
+    optionsBar.setIncludeTree(null);
     renderResult(byId('result'), null);
     return;
   }
   const loaded = filled.map((f) => load(f.slot, f.a, rootPath.path));
+  const keyField = opts.ignoreArrayOrder ? opts.arrayKeyField : '';
+  const union = buildUnion(loaded.map((l) => l.doc.node), keyField);
+  optionsBar.setIncludeTree(unionItems(union, loaded.map((l) => l.slot.letter)));
   const notes = [rootMessage(formatPath(rootPath.path), loaded), ...missingIncludes(includes.paths, loaded)];
   const info = notes.filter((n): n is string => n !== null);
   optionsBar.setScopeMessage(info.length ? info.join('\n') : null, 'info');
