@@ -599,7 +599,21 @@ describe('app with more than two files', () => {
       ['$.b', '2', '3', '2'],
     ]);
     expect(cell(0, 3).className).toContain('d-changed');
-    expect(document.querySelector('.matrix-summary')!.textContent).toBe('File B: 1 differenzaFile C: 1 differenza');
+    // each file gets the same kind chips as a pair comparison
+    const groups = [...document.querySelectorAll('.matrix-summary .matrix-file')];
+    expect(groups.map((g) => [g.querySelector('.who')!.textContent, [...g.querySelectorAll('.chip')].map((c) => c.textContent)])).toEqual([
+      ['File B', ['1 modificata']],
+      ['File C', ['1 modificata']],
+    ]);
+    expect(groups[0].querySelector('.chip')!.className).toBe('chip d-changed');
+  });
+
+  it('marks a file equal to the base in the matrix summary', () => {
+    type(2, 'a: 1\nb: 2\n');
+    const groups = [...document.querySelectorAll('.matrix-summary .matrix-file')];
+    expect(groups[1].textContent).toBe('File Cnessuna differenza');
+    expect(groups[1].querySelector('.chip')!.className).toBe('chip none');
+    type(2, 'a: 9\nb: 2\n');
   });
 
   it('moves through the matrix with the keyboard', () => {

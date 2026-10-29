@@ -1027,14 +1027,28 @@ textarea {
 .matrix-summary {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 6px 20px;
   margin-bottom: 8px;
 }
 
-/* per-file counts, not a kind of difference: neutral and without the ledger bar */
-.matrix-summary .chip {
+/* one file against the base: its name, then the kind chips of a pair comparison */
+.matrix-file {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.matrix-file .who {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* a file equal to the base: an outcome, not a kind of difference, so neutral and without the bar */
+.matrix-summary .chip.none {
   border: 1px solid var(--border);
   background: var(--panel);
+  color: var(--muted);
 }
 
 .matrix-actions {

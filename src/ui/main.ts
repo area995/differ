@@ -390,7 +390,7 @@ function renderMatrixView(
     rows,
     names: [base, ...others].map((l) => name(l.slot)),
     titles: [base, ...others].map((l) => title(l.slot)),
-    counts: entries.map((e) => e.length),
+    entries,
     scope,
     initial,
     actions: {

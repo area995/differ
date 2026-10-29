@@ -101,7 +101,8 @@ export function describeEntry(e: DiffEntry): string {
   }
 }
 
-function summary(entries: DiffEntry[]): HTMLElement {
+/** One chip per difference kind with its count, in the kind's ledger colors. */
+export function summary(entries: DiffEntry[]): HTMLElement {
   const counts = new Map<DiffKind, number>();
   for (const e of entries) counts.set(e.kind, (counts.get(e.kind) ?? 0) + 1);
   const div = el('div', 'summary');

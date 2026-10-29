@@ -225,7 +225,7 @@ Compact, bordered and quiet. They become emphatic only on hover.
 
 ### Chips
 - **Diff summary chip:** count plus kind label ("3 aggiunte"), tinted with that kind's ledger pair (tint fill, 4px bar), 4px radius, label size.
-- **Matrix summary chip:** same shape, but neutral (Bench Gray fill, Hairline border), per-file counts rather than kinds.
+- **Matrix summary:** one group per non-base file, its short name in 600 weight followed by the same kind chips as a pair comparison, so each file's differences read with the ledger colors. A file equal to the base gets a single neutral "nessuna differenza" chip (Bench Gray fill, Hairline border, Slate Muted text, no bar).
 
 ### Cards / Containers
 - **File card (panel):** Bench Gray, 1px Hairline, 8px radius, 8px padding. The **base** card swaps its border to Signal Blue, and a dragged file over it adds a 2px dashed Signal Blue outline. Its header holds the heading, an optional name field (borderless and transparent until hovered or focused, semibold; the user's label such as "prod" replaces "File B" / "B" in buttons, headers and messages), the file-name pill, the detected format, the base picker, an italic "modificato, non salvato" tag after an apply, and its actions (Apri file…, download, trash), grouped at the end so they never split across lines.

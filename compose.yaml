@@ -1,9 +1,10 @@
 # Docker Desktop: `docker compose up --build`, then open http://localhost:8080
 # Port taken? `LEDGER_PORT=8081 docker compose up --build` (PowerShell: $env:LEDGER_PORT=8081 first)
+# Specific build: `LEDGER_TAG=1.0.0 docker compose up` runs ledger:1.0.0 instead of latest
 services:
   ledger:
     build: .
-    image: ledger:latest
+    image: ledger:${LEDGER_TAG:-latest}
     ports:
       - "${LEDGER_PORT:-8080}:8080"
     restart: unless-stopped

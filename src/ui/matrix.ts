@@ -1,7 +1,7 @@
-import type { DiffKind } from '../core/model';
+import type { DiffEntry, DiffKind } from '../core/model';
 import type { MatrixRow } from '../core/multi';
 import { el, setTabStop, step } from './dom';
-import { equalBanner, formatValue, reasonText } from './result';
+import { equalBanner, formatValue, reasonText, summary as kindChips } from './result';
 
 export type MatrixActions = {
   /** Positions the editors on the row. */
@@ -19,8 +19,8 @@ export type MatrixInput = {
   names: string[];
   /** Column titles, base first (may include the file name). */
   titles: string[];
-  /** Number of differences of each non-base file. */
-  counts: number[];
+  /** Differences of each non-base file against the base. */
+  entries: DiffEntry[][];
   actions: MatrixActions;
   /** What the comparison is limited to, shown with the "equivalent" message. */
   scope?: string | null;
@@ -42,17 +42,27 @@ export function renderMatrix(root: HTMLElement, input: MatrixInput, answer?: HTM
   const top = answer ?? root;
   top.replaceChildren();
   root.replaceChildren();
-  const { rows, names, titles, counts, actions } = input;
+  const { rows, names, titles, entries, actions } = input;
   if (rows.length === 0) {
     top.append(equalBanner(input.scope));
     return;
   }
 
+  // each file against the base, with the same kind chips as a pair comparison
   const summary = el('div', 'matrix-summary');
-  counts.forEach((n, i) => {
-    const chip = el('span', 'chip');
-    chip.textContent = `${names[i + 1]}: ${n} ${n === 1 ? 'differenza' : 'differenze'}`;
-    summary.append(chip);
+  entries.forEach((list, i) => {
+    const group = el('span', 'matrix-file');
+    const who = el('span', 'who');
+    who.textContent = names[i + 1];
+    group.append(who);
+    if (list.length) {
+      group.append(...kindChips(list).children);
+    } else {
+      const none = el('span', 'chip none');
+      none.textContent = 'nessuna differenza';
+      group.append(none);
+    }
+    summary.append(group);
   });
 
   const bar = el('div', 'matrix-actions');
