@@ -1,23 +1,29 @@
 import { markEdit, noMarks } from '../core/linemarks';
 import type { DiffKind, Format, Node, ParseError, Range } from '../core/model';
 import type { Edit } from '../core/patch';
-import { toOffset } from '../core/text';
+import { eolOf, toLf, toOffset } from '../core/text';
 import { el, setTabStop, step } from './dom';
 import { iconButton } from './icons';
 import { renderTree, setAllExpanded } from './tree';
 import { documentItems } from './tree-items';
 
 export type FormatChoice = 'auto' | Format;
-/** `label` is the user's name for the file ("prod"), empty for none. */
-export type InputState = { text: string; fileName?: string; choice: FormatChoice; label?: string };
+/**
+ * `label` is the user's name for the file ("prod"), empty for none. `text` always has LF line endings;
+ * `eol` is the line ending of the file it came from, restored when saving (none = LF).
+ */
+export type InputState = { text: string; fileName?: string; choice: FormatChoice; label?: string; eol?: '\r\n' };
 export type InputPanel = {
   setStatus(format: Format | null, error: ParseError | null): void;
   /** Selects `range` in the editor, scrolls to it and marks its lines in the gutter. */
   reveal(range: Range | null): void;
   /** Loads a file into this card, replacing its content. */
   load(file: File): Promise<void>;
-  /** Applies an edit through the editor, so that the browser can undo it, and selects the new text. */
-  replace(edit: Edit): void;
+  /**
+   * Applies an edit and selects the new text, only if the result is exactly `expected` (the text that was
+   * checked); otherwise leaves the editor untouched and returns false.
+   */
+  replace(edit: Edit, expected: string): boolean;
   setControls(state: { base: boolean; removable: boolean }): void;
   /** The parsed document for the tree tab, or null with the reason shown instead. */
   setTree(node: Node | null, message: string): void;
@@ -33,6 +39,17 @@ export type InputPanel = {
 export type PanelControls = { onBase(): void; onRemove(): void; onMoreFiles(files: File[]): void };
 
 const MAX_SIZE = 5 * 1024 * 1024;
+
+/**
+ * A Signal Blue wash that fades from lines the eye has to find after a jump: those of a selected node (land),
+ * longer on those just changed by an apply (post), which settle into Applied Gray.
+ */
+type Wash = { from: number; to: number; start: number; kind: 'land' | 'post' };
+/** Durations of the two washes, matching the CSS animations. */
+const WASH_MS = { land: 600, post: 1200 };
+
+/** 1-based line of a text offset. */
+const lineOf = (text: string, offset: number) => text.slice(0, offset).split('\n').length;
 
 export function createInputPanel(
   root: HTMLElement,
@@ -87,8 +104,11 @@ export function createInputPanel(
     modified = value;
     modifiedTag.hidden = !value;
   };
+  // the actions stay together at the end of the header, whatever wraps before them
+  const actions = el('div', 'panel-actions');
+  actions.append(fileButton, fileInput, save);
   const head = el('div', 'panel-head');
-  head.append(heading, labelInput, fileName, select, detected, modifiedTag, fileButton, fileInput, save);
+  head.append(heading, labelInput, fileName, select, detected, modifiedTag, actions);
 
   const baseInput = el('input');
   baseInput.type = 'radio';
@@ -102,7 +122,7 @@ export function createInputPanel(
     baseInput.addEventListener('change', () => controls.onBase());
     remove.addEventListener('click', () => controls.onRemove());
     fileName.after(baseLabel);
-    head.append(remove);
+    actions.append(remove);
   }
 
   const gutter = el('pre', 'gutter');
@@ -211,6 +231,9 @@ export function createInputPanel(
   let marks = noMarks();
   let diffMarks = new Map<number, DiffKind>();
   let applying = false;
+  let washes: Wash[] = [];
+  const wash = (from: number, to: number, kind: Wash['kind']) =>
+    washes.push({ from, to, kind, start: performance.now() });
   const syncScroll = () => {
     gutter.scrollTop = textarea.scrollTop;
     backdropLines.style.transform = `translateY(${-textarea.scrollTop}px)`;
@@ -220,6 +243,8 @@ export function createInputPanel(
     if (n !== lineCount || force) {
       lineCount = n;
       const lines = Array.from({ length: n }, (_, i) => i + 1);
+      const now = performance.now();
+      washes = washes.filter((w) => now - w.start < WASH_MS[w.kind]);
       gutter.replaceChildren(
         ...lines.map((line) => {
           const span = el('span');
@@ -245,6 +270,12 @@ export function createInputPanel(
             if (line === current[0]) shade.classList.add('cur-start');
             if (line === current[1]) shade.classList.add('cur-end');
           }
+          // the lines are rebuilt on every recomputation: a negative delay resumes a wash where it was
+          const w = washes.filter((x) => line >= x.from && line <= x.to).at(-1);
+          if (w) {
+            shade.classList.add('wash', `wash-${w.kind}`);
+            shade.style.animationDelay = `${w.start - now}ms`;
+          }
           return shade;
         }),
       );
@@ -254,14 +285,15 @@ export function createInputPanel(
 
   const emit = () => onChange({ ...state });
 
+  /** Shows new content; its line endings become LF, as the editor would report them anyway. */
   const show = (next: InputState) => {
-    Object.assign(state, next);
+    Object.assign(state, next, { text: toLf(next.text) });
     fileName.textContent = next.fileName ?? '';
     fileName.title = next.fileName ?? '';
     fileName.hidden = !next.fileName;
     select.value = next.choice;
     labelInput.value = next.label ?? '';
-    textarea.value = next.text;
+    textarea.value = state.text;
     marks = noMarks();
     renderGutter(true);
     emit();
@@ -271,7 +303,8 @@ export function createInputPanel(
     const mb = (file.size / (1024 * 1024)).toFixed(1);
     if (file.size > MAX_SIZE && !confirm(`${file.name} pesa ${mb} MB. Caricarlo comunque?`)) return;
     setModified(false);
-    show({ ...state, text: await file.text(), fileName: file.name });
+    const text = await file.text();
+    show({ ...state, text, fileName: file.name, eol: eolOf(text) });
   };
 
   textarea.addEventListener('input', () => {
@@ -303,7 +336,8 @@ export function createInputPanel(
   });
   save.addEventListener('click', () => {
     const name = state.fileName ?? `${(state.label || title).toLowerCase().replace(/\s+/g, '-')}.${format ?? 'txt'}`;
-    const url = URL.createObjectURL(new Blob([textarea.value], { type: 'text/plain' }));
+    const content = state.eol ? textarea.value.replace(/\n/g, state.eol) : textarea.value;
+    const url = URL.createObjectURL(new Blob([content], { type: 'text/plain' }));
     const link = el('a');
     link.href = url;
     link.download = name;
@@ -331,7 +365,7 @@ export function createInputPanel(
     if (!text) return;
     e.preventDefault();
     setModified(false);
-    show({ ...state, text, fileName: undefined });
+    show({ ...state, text, fileName: undefined, eol: eolOf(text) });
   });
 
   renderGutter();
@@ -353,6 +387,7 @@ export function createInputPanel(
 
     reveal(range) {
       current = range ? [range.start.line, range.end.line] : null;
+      if (range) wash(range.start.line, range.end.line, 'land');
       renderGutter(true);
       if (!range) return;
       const text = textarea.value;
@@ -368,17 +403,27 @@ export function createInputPanel(
       remove.hidden = !removable;
     },
 
-    replace(edit) {
+    replace(edit, expected) {
       // the textarea is read-only, so changes are set directly; undo is offered by the caller (Annulla)
       const before = textarea.value;
-      textarea.value = before.slice(0, edit.start) + edit.text + before.slice(edit.end);
+      const next = before.slice(0, edit.start) + edit.text + before.slice(edit.end);
+      // the edit was computed and checked on another text: applied here it would land elsewhere
+      if (next !== expected) return false;
+      textarea.value = next;
       applying = true;
       textarea.dispatchEvent(new Event('input'));
       applying = false;
       setModified(true);
       marks = markEdit(before, textarea.value, marks);
+      const after = textarea.value;
+      const [from, to] = [lineOf(after, edit.start), lineOf(after, edit.start + edit.text.length)];
+      // the difference written here is resolved: its mark would only tint the wash until the recomputation
+      diffMarks = new Map(diffMarks);
+      for (let line = from; line <= to; line++) diffMarks.delete(line);
+      wash(from, to, 'post');
       renderGutter(true);
       textarea.setSelectionRange(edit.start, edit.start + edit.text.length);
+      return true;
     },
 
     setTree(node, message) {

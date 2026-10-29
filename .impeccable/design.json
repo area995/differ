@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-27T15:37:37.161Z",
+  "generatedAt": "2026-10-29T11:40:15.356Z",
   "title": "Design System: Ledger",
   "extensions": {
     "colorMeta": {
@@ -342,31 +342,56 @@
     "typographyMeta": {
       "headline": {
         "displayName": "Headline",
-        "purpose": "App title only."
+        "purpose": "The app title \"Ledger\" only."
       },
       "title": {
         "displayName": "Title",
-        "purpose": "Section and pane headings."
+        "purpose": "Card headings such as \"File A\"."
       },
       "body": {
         "displayName": "Body",
-        "purpose": "Option labels, descriptions, notices."
+        "purpose": "Option labels, diff-list descriptions, notices."
       },
       "label": {
         "displayName": "Label",
-        "purpose": "Small buttons, tabs, chips, meta text."
+        "purpose": "Small buttons, tabs, chips, legends, scope and configuration messages, evidence line."
       },
       "code": {
         "displayName": "Code",
-        "purpose": "Editors, gutters, panes, trees, matrix: all data."
+        "purpose": "Editors, gutters, trees, matrix cells, paths: all data."
       }
     },
     "shadows": [],
     "motion": [
       {
-        "name": "line-flash",
-        "value": "outline 2px var(--fg) → transparent, 1.2s ease-out",
-        "purpose": "Marks the target line after jumping from a diff entry."
+        "name": "wash-land",
+        "value": "Signal Blue layer, opacity 0.22 held to 25% then 0, 600ms ease-out",
+        "purpose": "Editor lines where a selected difference lands, so the eye finds them after the jump."
+      },
+      {
+        "name": "wash-post",
+        "value": "Signal Blue layer, opacity 0.32 held to 25% then 0, 1200ms ease-out",
+        "purpose": "Editor lines an apply has just written; dries into Applied Gray. Kept under reduced motion."
+      },
+      {
+        "name": "arrive",
+        "value": "opacity 0 → 1, translateY(-3px) → 0, 180ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Each new outcome of the notice, status line and configuration message; fade only with reduced motion."
+      },
+      {
+        "name": "unroll",
+        "value": "clip-path inset(0 0 100% 0) → inset(0), 200ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "A Scegli picker opening below its field; none with reduced motion."
+      },
+      {
+        "name": "hover-ease",
+        "value": "border-color, color 120ms ease-out",
+        "purpose": "Small and icon buttons on hover."
+      },
+      {
+        "name": "toggle-rotate",
+        "value": "transform rotate(90deg), 120ms ease-out",
+        "purpose": "Tree chevrons opening; none with reduced motion."
       }
     ],
     "breakpoints": [
@@ -375,7 +400,7 @@
         "value": "600px"
       },
       {
-        "name": "panes-stack",
+        "name": "options-stack",
         "value": "900px"
       }
     ]
@@ -385,118 +410,150 @@
       "name": "Small Button",
       "kind": "button",
       "refersTo": "button-small",
-      "description": "Apply, matrix action and tree-tool button; quiet until hovered.",
-      "html": "<button class=\"ds-btn-small\">A → B</button> <button class=\"ds-btn-small\" disabled>B → A</button>",
-      "css": ":host{--bg:#fff;--fg:#1d2330;--muted:#667085;--border:#d9dde5;--panel:#f7f8fa;--accent:#3b6fd8;--added:#e3f6e8;--added-bar:#2e9e50;--removed:#fde7e7;--removed-bar:#d0393e;--changed:#fff4cc;--changed-bar:#a87f00;--type:#ffe6d1;--type-bar:#c55a12;--moved:#e1ecff;--moved-bar:#3b6fd8;font-family:system-ui,-apple-system,\"Segoe UI\",sans-serif;color:var(--fg)} .ds-btn-small{padding:2px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--fg);font:inherit;font-size:.85rem;white-space:nowrap;cursor:pointer}.ds-btn-small:hover:not(:disabled){border-color:var(--accent)}.ds-btn-small:focus-visible{outline:2px solid var(--accent);outline-offset:1px}.ds-btn-small:disabled{opacity:.4;cursor:not-allowed}"
+      "description": "Apply, matrix action, tree tool, Scegli and configuration button; quiet until hovered.",
+      "html": "<button class=\"ds-btn-small\">A → B</button> <button class=\"ds-btn-small\">Scegli</button> <button class=\"ds-btn-small\" disabled title=\"Le chiavi spostate non si possono riportare\">B → A</button>",
+      "css": ":host{--canvas:#e6e9ee;--bg:#ffffff;--fg:#1d2330;--muted:#5f6878;--border:#d9dde5;--panel:#f6f7f9;--accent:#3b6fd8;--error:#c42b2b;--added:#e3f6e8;--added-bar:#2e9e50;--removed:#fde7e7;--removed-bar:#d0393e;--changed:#fff4cc;--changed-bar:#a87f00;--type:#ffe6d1;--type-bar:#c55a12;--moved:#e1ecff;--moved-bar:#3b6fd8;--whitespace:#eef0f3;--whitespace-bar:#7a8496;--applied:#e3e6ea;font-family:system-ui,-apple-system,\"Segoe UI\",sans-serif;color:var(--fg)} .ds-btn-small{padding:2px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--fg);font:inherit;font-size:.85rem;white-space:nowrap;cursor:pointer;transition:border-color 120ms ease-out}.ds-btn-small:hover:not(:disabled){border-color:var(--accent)}.ds-btn-small:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.ds-btn-small:disabled{opacity:.4;cursor:not-allowed}"
     },
     {
       "name": "Icon Button",
       "kind": "button",
       "refersTo": "icon-button",
-      "description": "28px square icon-only button with aria-label and tooltip; trash variant hovers red.",
-      "html": "<button class=\"ds-icon-btn\" aria-label=\"Scarica\" title=\"Scarica\"><svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/><polyline points=\"7 10 12 15 17 10\"/><line x1=\"12\" x2=\"12\" y1=\"15\" y2=\"3\"/></svg></button> <button class=\"ds-icon-btn ds-remove\" aria-label=\"Rimuovi\" title=\"Rimuovi\"><svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 6h18\"/><path d=\"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6\"/><path d=\"M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\"/><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"/><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"/></svg></button>",
-      "css": ":host{--bg:#fff;--fg:#1d2330;--muted:#667085;--border:#d9dde5;--panel:#f7f8fa;--accent:#3b6fd8;--added:#e3f6e8;--added-bar:#2e9e50;--removed:#fde7e7;--removed-bar:#d0393e;--changed:#fff4cc;--changed-bar:#a87f00;--type:#ffe6d1;--type-bar:#c55a12;--moved:#e1ecff;--moved-bar:#3b6fd8;font-family:system-ui,-apple-system,\"Segoe UI\",sans-serif;color:var(--fg)} .ds-icon-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--fg);cursor:pointer}.ds-icon-btn:hover{border-color:var(--accent);color:var(--accent)}.ds-icon-btn.ds-remove:hover{border-color:var(--removed-bar);color:var(--removed-bar)}.ds-icon-btn:focus-visible{outline:2px solid var(--accent);outline-offset:1px}"
+      "description": "28px square icon-only button with aria-label and tooltip; the trash variant hovers Alarm Red.",
+      "html": "<button class=\"ds-icon-btn\" aria-label=\"Salva\" title=\"Scarica il contenuto attuale\"><svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/><polyline points=\"7 10 12 15 17 10\"/><line x1=\"12\" x2=\"12\" y1=\"15\" y2=\"3\"/></svg></button> <button class=\"ds-icon-btn ds-remove\" aria-label=\"Rimuovi\" title=\"Rimuovi il file dal confronto\"><svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 6h18\"/><path d=\"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6\"/><path d=\"M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\"/><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"/><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"/></svg></button>",
+      "css": ":host{--canvas:#e6e9ee;--bg:#ffffff;--fg:#1d2330;--muted:#5f6878;--border:#d9dde5;--panel:#f6f7f9;--accent:#3b6fd8;--error:#c42b2b;--added:#e3f6e8;--added-bar:#2e9e50;--removed:#fde7e7;--removed-bar:#d0393e;--changed:#fff4cc;--changed-bar:#a87f00;--type:#ffe6d1;--type-bar:#c55a12;--moved:#e1ecff;--moved-bar:#3b6fd8;--whitespace:#eef0f3;--whitespace-bar:#7a8496;--applied:#e3e6ea;font-family:system-ui,-apple-system,\"Segoe UI\",sans-serif;color:var(--fg)} .ds-icon-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--fg);cursor:pointer;transition:border-color 120ms ease-out,color 120ms ease-out}.ds-icon-btn:hover{border-color:var(--accent);color:var(--accent)}.ds-icon-btn.ds-remove:hover{border-color:var(--error);color:var(--error)}.ds-icon-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}"
     },
     {
       "name": "Add File Button",
       "kind": "button",
       "refersTo": "add-file-button",
-      "description": "Dashed slot affordance for adding another file.",
+      "description": "Dashed \"slot for more\" affordance on the canvas, with its own Paper fill for contrast.",
       "html": "<button class=\"ds-add-file\">+ Aggiungi file</button>",
-      "css": ":host{--bg:#fff;--fg:#1d2330;--muted:#667085;--border:#d9dde5;--panel:#f7f8fa;--accent:#3b6fd8;--added:#e3f6e8;--added-bar:#2e9e50;--removed:#fde7e7;--removed-bar:#d0393e;--changed:#fff4cc;--changed-bar:#a87f00;--type:#ffe6d1;--type-bar:#c55a12;--moved:#e1ecff;--moved-bar:#3b6fd8;font-family:system-ui,-apple-system,\"Segoe UI\",sans-serif;color:var(--fg)} .ds-add-file{padding:4px 12px;border:1px dashed var(--border);border-radius:6px;background:transparent;color:var(--accent);font:inherit;cursor:pointer}.ds-add-file:hover{border-color:var(--accent)}.ds-add-file:focus-visible{outline:2px solid var(--accent);outline-offset:1px}"
+      "css": ":host{--canvas:#e6e9ee;--bg:#ffffff;--fg:#1d2330;--muted:#5f6878;--border:#d9dde5;--panel:#f6f7f9;--accent:#3b6fd8;--error:#c42b2b;--added:#e3f6e8;--added-bar:#2e9e50;--removed:#fde7e7;--removed-bar:#d0393e;--changed:#fff4cc;--changed-bar:#a87f00;--type:#ffe6d1;--type-bar:#c55a12;--moved:#e1ecff;--moved-bar:#3b6fd8;--whitespace:#eef0f3;--whitespace-bar:#7a8496;--applied:#e3e6ea;font-family:system-ui,-apple-system,\"Segoe UI\",sans-serif;color:var(--fg)} .ds-add-file{padding:4px 12px;border:1px dashed var(--muted);border-radius:6px;background:var(--bg);color:var(--accent);font:inherit;cursor:pointer}.ds-add-file:focus-visible{outline:2px solid var(--accent);outline-offset:2px}"
     },
     {
-      "name": "Text Input",
+      "name": "Scope Fields",
       "kind": "input",
       "refersTo": "text-input",
-      "description": "Root / Includi option field inside the options bar.",
-      "html": "<label class=\"ds-opt\">Root <input class=\"ds-input\" type=\"text\" placeholder=\"$.spec.template\"></label>",
-      "css": ":host{--bg:#fff;--fg:#1d2330;--muted:#667085;--border:#d9dde5;--panel:#f7f8fa;--accent:#3b6fd8;--added:#e3f6e8;--added-bar:#2e9e50;--removed:#fde7e7;--removed-bar:#d0393e;--changed:#fff4cc;--changed-bar:#a87f00;--type:#ffe6d1;--type-bar:#c55a12;--moved:#e1ecff;--moved-bar:#3b6fd8;font-family:system-ui,-apple-system,\"Segoe UI\",sans-serif;color:var(--fg)} .ds-opt{display:inline-flex;align-items:center;gap:6px}.ds-input{padding:4px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--fg);font:inherit}.ds-input:focus-visible{outline:2px solid var(--accent);outline-offset:0;border-color:var(--accent)}"
+      "description": "Includi and Escludi path lists in the Ambito group, each with its Scegli button; the scope message below.",
+      "html": "<div class=\"ds-scope\"><label class=\"ds-opt\">Includi <input class=\"ds-input\" type=\"text\" value=\"server, db\" placeholder=\"tutti i sottoalberi (es. server, db.pool)\"></label><button class=\"ds-btn-small\">Scegli</button><label class=\"ds-opt\">Escludi <input class=\"ds-input\" type=\"text\" placeholder=\"nessun sottoalbero (es. server.tls, db.password)\"></label><button class=\"ds-btn-small\">Scegli</button><div class=\"ds-msg\">Escludi: $.nope non trovato né in A né in B</div></div>",
+      "css": ":host{--canvas:#e6e9ee;--bg:#ffffff;--fg:#1d2330;--muted:#5f6878;--border:#d9dde5;--panel:#f6f7f9;--accent:#3b6fd8;--error:#c42b2b;--added:#e3f6e8;--added-bar:#2e9e50;--removed:#fde7e7;--removed-bar:#d0393e;--changed:#fff4cc;--changed-bar:#a87f00;--type:#ffe6d1;--type-bar:#c55a12;--moved:#e1ecff;--moved-bar:#3b6fd8;--whitespace:#eef0f3;--whitespace-bar:#7a8496;--applied:#e3e6ea;font-family:system-ui,-apple-system,\"Segoe UI\",sans-serif;color:var(--fg)} .ds-scope{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;max-width:560px}.ds-opt{display:flex;flex:1 1 16rem;align-items:center;gap:6px}.ds-input{flex:1;min-width:0;padding:4px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--fg);font:inherit;caret-color:var(--accent)}.ds-input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.ds-btn-small{padding:2px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--fg);font:inherit;font-size:.85rem;white-space:nowrap;cursor:pointer;transition:border-color 120ms ease-out}.ds-btn-small:hover{border-color:var(--accent)}.ds-msg{flex-basis:100%;color:var(--muted);font-size:.85rem}"
+    },
+    {
+      "name": "Configuration Row",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "Load and save all the options as a named JSON file; spans the options bar below its groups.",
+      "html": "<div class=\"ds-config\"><button class=\"ds-btn-small\">Carica configurazione…</button><input class=\"ds-name\" type=\"text\" placeholder=\"ledger-config\" aria-label=\"Nome del file di configurazione\"><button class=\"ds-btn-small\">Salva configurazione</button><span class=\"ds-cmsg\">Configurazione salvata come prod.json</span></div>",
+      "css": ":host{--canvas:#e6e9ee;--bg:#ffffff;--fg:#1d2330;--muted:#5f6878;--border:#d9dde5;--panel:#f6f7f9;--accent:#3b6fd8;--error:#c42b2b;--added:#e3f6e8;--added-bar:#2e9e50;--removed:#fde7e7;--removed-bar:#d0393e;--changed:#fff4cc;--changed-bar:#a87f00;--type:#ffe6d1;--type-bar:#c55a12;--moved:#e1ecff;--moved-bar:#3b6fd8;--whitespace:#eef0f3;--whitespace-bar:#7a8496;--applied:#e3e6ea;font-family:system-ui,-apple-system,\"Segoe UI\",sans-serif;color:var(--fg)} .ds-config{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding-top:8px;border-top:1px solid var(--border)}.ds-btn-small{padding:2px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--fg);font:inherit;font-size:.85rem;white-space:nowrap;cursor:pointer;transition:border-color 120ms ease-out}.ds-btn-small:hover{border-color:var(--accent)}.ds-btn-small:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.ds-name{width:14rem;max-width:100%;padding:2px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--fg);font:inherit;font-size:.85rem}.ds-name:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.ds-cmsg{color:var(--muted);font-size:.85rem;animation:ds-arrive 180ms cubic-bezier(0.16,1,0.3,1)}@keyframes ds-arrive{from{opacity:0;transform:translateY(-3px)}}@media (prefers-reduced-motion:reduce){@keyframes ds-arrive{from{opacity:0}}}"
     },
     {
       "name": "Testo / Albero Tabs",
       "kind": "nav",
       "refersTo": "tab",
-      "description": "Top-rounded tab switch on each file card.",
+      "description": "Top-rounded tab switch on each file card; the selected tab sits on the surface below.",
       "html": "<div class=\"ds-tabs\" role=\"tablist\"><button role=\"tab\" aria-selected=\"true\">Testo</button><button role=\"tab\" aria-selected=\"false\">Albero</button></div>",
-      "css": ":host{--bg:#fff;--fg:#1d2330;--muted:#667085;--border:#d9dde5;--panel:#f7f8fa;--accent:#3b6fd8;--added:#e3f6e8;--added-bar:#2e9e50;--removed:#fde7e7;--removed-bar:#d0393e;--changed:#fff4cc;--changed-bar:#a87f00;--type:#ffe6d1;--type-bar:#c55a12;--moved:#e1ecff;--moved-bar:#3b6fd8;font-family:system-ui,-apple-system,\"Segoe UI\",sans-serif;color:var(--fg)} .ds-tabs{display:flex;gap:2px}.ds-tabs button{padding:2px 12px;border:1px solid var(--border);border-radius:6px 6px 0 0;background:var(--panel);color:var(--muted);font:inherit;font-size:.85rem;cursor:pointer}.ds-tabs button[aria-selected=\"true\"]{background:var(--bg);color:var(--fg);font-weight:600}.ds-tabs button:hover{color:var(--fg)}.ds-tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}"
+      "css": ":host{--canvas:#e6e9ee;--bg:#ffffff;--fg:#1d2330;--muted:#5f6878;--border:#d9dde5;--panel:#f6f7f9;--accent:#3b6fd8;--error:#c42b2b;--added:#e3f6e8;--added-bar:#2e9e50;--removed:#fde7e7;--removed-bar:#d0393e;--changed:#fff4cc;--changed-bar:#a87f00;--type:#ffe6d1;--type-bar:#c55a12;--moved:#e1ecff;--moved-bar:#3b6fd8;--whitespace:#eef0f3;--whitespace-bar:#7a8496;--applied:#e3e6ea;font-family:system-ui,-apple-system,\"Segoe UI\",sans-serif;color:var(--fg)} .ds-tabs{display:flex;gap:2px}.ds-tabs button{padding:2px 12px;border:1px solid var(--border);border-radius:6px 6px 0 0;background:var(--panel);color:var(--muted);font:inherit;font-size:.85rem;cursor:pointer}.ds-tabs button[aria-selected=\"true\"]{background:var(--bg);color:var(--fg);font-weight:600}.ds-tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}"
     },
     {
       "name": "Diff Chips",
       "kind": "chip",
       "refersTo": "diff-chip",
-      "description": "Summary counts per difference kind: tint fill + 4px kind bar.",
-      "html": "<div class=\"ds-chips\"><span class=\"ds-chip ds-added\">3 aggiunte</span><span class=\"ds-chip ds-removed\">1 rimossa</span><span class=\"ds-chip ds-changed\">2 valori</span><span class=\"ds-chip ds-type\">1 tipo</span><span class=\"ds-chip ds-moved\">4 spostate</span></div>",
-      "css": ":host{--bg:#fff;--fg:#1d2330;--muted:#667085;--border:#d9dde5;--panel:#f7f8fa;--accent:#3b6fd8;--added:#e3f6e8;--added-bar:#2e9e50;--removed:#fde7e7;--removed-bar:#d0393e;--changed:#fff4cc;--changed-bar:#a87f00;--type:#ffe6d1;--type-bar:#c55a12;--moved:#e1ecff;--moved-bar:#3b6fd8;font-family:system-ui,-apple-system,\"Segoe UI\",sans-serif;color:var(--fg)} .ds-chips{display:flex;flex-wrap:wrap;gap:6px}.ds-chip{padding:2px 8px;border-left:4px solid;border-radius:4px;font-size:.85rem}.ds-added{background:var(--added);border-left-color:var(--added-bar)}.ds-removed{background:var(--removed);border-left-color:var(--removed-bar)}.ds-changed{background:var(--changed);border-left-color:var(--changed-bar)}.ds-type{background:var(--type);border-left-color:var(--type-bar)}.ds-moved{background:var(--moved);border-left-color:var(--moved-bar)}"
+      "description": "Summary counts per difference kind: tint fill plus 4px kind bar.",
+      "html": "<div class=\"ds-chips\"><span class=\"ds-chip ds-added\">3 aggiunte</span><span class=\"ds-chip ds-removed\">1 rimossa</span><span class=\"ds-chip ds-changed\">2 modificate</span><span class=\"ds-chip ds-type\">1 tipo cambiato</span><span class=\"ds-chip ds-moved\">4 spostate</span><span class=\"ds-chip ds-whitespace\">2 formattazione</span></div>",
+      "css": ":host{--canvas:#e6e9ee;--bg:#ffffff;--fg:#1d2330;--muted:#5f6878;--border:#d9dde5;--panel:#f6f7f9;--accent:#3b6fd8;--error:#c42b2b;--added:#e3f6e8;--added-bar:#2e9e50;--removed:#fde7e7;--removed-bar:#d0393e;--changed:#fff4cc;--changed-bar:#a87f00;--type:#ffe6d1;--type-bar:#c55a12;--moved:#e1ecff;--moved-bar:#3b6fd8;--whitespace:#eef0f3;--whitespace-bar:#7a8496;--applied:#e3e6ea;font-family:system-ui,-apple-system,\"Segoe UI\",sans-serif;color:var(--fg)} .ds-chips{display:flex;flex-wrap:wrap;gap:6px}.ds-chip{padding:2px 8px;border-left:4px solid;border-radius:4px;font-size:.85rem}.ds-added{background:var(--added);border-left-color:var(--added-bar)}.ds-removed{background:var(--removed);border-left-color:var(--removed-bar)}.ds-changed{background:var(--changed);border-left-color:var(--changed-bar)}.ds-type{background:var(--type);border-left-color:var(--type-bar)}.ds-moved{background:var(--moved);border-left-color:var(--moved-bar)}.ds-whitespace{background:var(--whitespace);border-left-color:var(--whitespace-bar)}"
     },
     {
       "name": "File Card",
       "kind": "card",
       "refersTo": "panel",
-      "description": "Bench-gray card with file-name pill; base card gets a Signal Blue border.",
-      "html": "<div class=\"ds-panel ds-base\"><div class=\"ds-head\"><span class=\"ds-pill\">values-prod.yaml</span><span class=\"ds-detected\">YAML</span></div><div class=\"ds-editor\"><pre class=\"ds-gutter\">1\n2\n3</pre><pre class=\"ds-code\">server:\n  port: 8080\n  host: api</pre></div></div>",
-      "css": ":host{--bg:#fff;--fg:#1d2330;--muted:#667085;--border:#d9dde5;--panel:#f7f8fa;--accent:#3b6fd8;--added:#e3f6e8;--added-bar:#2e9e50;--removed:#fde7e7;--removed-bar:#d0393e;--changed:#fff4cc;--changed-bar:#a87f00;--type:#ffe6d1;--type-bar:#c55a12;--moved:#e1ecff;--moved-bar:#3b6fd8;font-family:system-ui,-apple-system,\"Segoe UI\",sans-serif;color:var(--fg)} .ds-panel{padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--panel);max-width:360px}.ds-panel.ds-base{border-color:var(--accent)}.ds-head{display:flex;align-items:center;gap:8px;margin-bottom:6px}.ds-pill{padding:2px 10px;border:1px solid var(--border);border-radius:999px;background:var(--bg);font-size:.85rem;font-weight:600}.ds-detected{color:var(--muted);font-size:.85rem}.ds-editor{display:flex;border:1px solid var(--border);border-radius:4px;background:var(--bg);overflow:hidden}.ds-gutter,.ds-code{margin:0;padding:6px 8px;font:13px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace}.ds-gutter{background:var(--panel);color:var(--muted);text-align:right}"
+      "description": "Bench Gray card with the file-name pill; the base card gets a Signal Blue border.",
+      "html": "<div class=\"ds-panel ds-base\"><div class=\"ds-head\"><strong>File A</strong><span class=\"ds-pill\">values-prod.yaml</span><span class=\"ds-detected\">rilevato: YAML</span></div><div class=\"ds-editor\"><pre class=\"ds-gutter\">1\n2\n3</pre><pre class=\"ds-code\">server:\n  port: 8080\n  host: api</pre></div></div>",
+      "css": ":host{--canvas:#e6e9ee;--bg:#ffffff;--fg:#1d2330;--muted:#5f6878;--border:#d9dde5;--panel:#f6f7f9;--accent:#3b6fd8;--error:#c42b2b;--added:#e3f6e8;--added-bar:#2e9e50;--removed:#fde7e7;--removed-bar:#d0393e;--changed:#fff4cc;--changed-bar:#a87f00;--type:#ffe6d1;--type-bar:#c55a12;--moved:#e1ecff;--moved-bar:#3b6fd8;--whitespace:#eef0f3;--whitespace-bar:#7a8496;--applied:#e3e6ea;font-family:system-ui,-apple-system,\"Segoe UI\",sans-serif;color:var(--fg)} .ds-panel{max-width:380px;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--panel)}.ds-panel.ds-base{border-color:var(--accent)}.ds-head{display:flex;align-items:center;gap:8px;margin-bottom:6px}.ds-pill{padding:2px 10px;border:1px solid var(--border);border-radius:999px;background:var(--bg);font-size:.85rem;font-weight:600}.ds-detected{color:var(--muted);font-size:.85rem}.ds-editor{display:flex;border:1px solid var(--border);border-radius:4px;background:var(--bg);overflow:hidden}.ds-gutter,.ds-code{margin:0;padding:6px 8px;font:13px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace}.ds-gutter{background:var(--panel);color:var(--muted);text-align:right}"
+    },
+    {
+      "name": "Editor Lines and the Wash",
+      "kind": "custom",
+      "refersTo": "editor",
+      "description": "Differing lines painted with their ledger pair; a Signal Blue wash dries away where an apply has just written.",
+      "html": "<div class=\"ds-ed\"><div class=\"ds-line\">server:</div><div class=\"ds-line ds-applied ds-wash\">  port: 8080</div><div class=\"ds-line\">  host: api</div><div class=\"ds-line ds-changed\">  user: root</div><div class=\"ds-line ds-whitespace ds-dashed\">logging: info</div></div>",
+      "css": ":host{--canvas:#e6e9ee;--bg:#ffffff;--fg:#1d2330;--muted:#5f6878;--border:#d9dde5;--panel:#f6f7f9;--accent:#3b6fd8;--error:#c42b2b;--added:#e3f6e8;--added-bar:#2e9e50;--removed:#fde7e7;--removed-bar:#d0393e;--changed:#fff4cc;--changed-bar:#a87f00;--type:#ffe6d1;--type-bar:#c55a12;--moved:#e1ecff;--moved-bar:#3b6fd8;--whitespace:#eef0f3;--whitespace-bar:#7a8496;--applied:#e3e6ea;font-family:system-ui,-apple-system,\"Segoe UI\",sans-serif;color:var(--fg)} .ds-ed{max-width:380px;padding:6px 0;border:1px solid var(--border);border-radius:4px;background:var(--bg);font:13px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace}.ds-line{position:relative;padding:0 8px;border-left:4px solid transparent;white-space:pre}.ds-applied{background:var(--applied)}.ds-dashed{border-left-style:dashed}.ds-added{background:var(--added);border-left-color:var(--added-bar)}.ds-removed{background:var(--removed);border-left-color:var(--removed-bar)}.ds-changed{background:var(--changed);border-left-color:var(--changed-bar)}.ds-type{background:var(--type);border-left-color:var(--type-bar)}.ds-moved{background:var(--moved);border-left-color:var(--moved-bar)}.ds-whitespace{background:var(--whitespace);border-left-color:var(--whitespace-bar)}.ds-wash::after{content:\"\";position:absolute;inset:0;background:var(--accent);opacity:0;animation:ds-wash 1200ms ease-out infinite;pointer-events:none}@keyframes ds-wash{0%,25%{opacity:.32}100%{opacity:0}}"
     },
     {
       "name": "Diff List",
       "kind": "custom",
       "refersTo": null,
       "description": "The ledger: one kind-tinted row per difference with path, description and apply actions.",
-      "html": "<ul class=\"ds-list\"><li class=\"ds-added\"><span>aggiunta</span><span class=\"ds-path\">$.db.pool</span><span>presente solo in B</span><span><button class=\"ds-b\">A → B</button></span></li><li class=\"ds-changed\"><span>valore</span><span class=\"ds-path\">$.server.port</span><span>8080 → 9090</span><span><button class=\"ds-b\">A → B</button></span></li></ul>",
-      "css": ":host{--bg:#fff;--fg:#1d2330;--muted:#667085;--border:#d9dde5;--panel:#f7f8fa;--accent:#3b6fd8;--added:#e3f6e8;--added-bar:#2e9e50;--removed:#fde7e7;--removed-bar:#d0393e;--changed:#fff4cc;--changed-bar:#a87f00;--type:#ffe6d1;--type-bar:#c55a12;--moved:#e1ecff;--moved-bar:#3b6fd8;font-family:system-ui,-apple-system,\"Segoe UI\",sans-serif;color:var(--fg)} .ds-list{margin:0;padding:0;list-style:none;border:1px solid var(--border);border-radius:8px;overflow:hidden}.ds-list li{display:grid;grid-template-columns:6em minmax(0,1fr) minmax(0,1.5fr) auto;align-items:center;gap:8px;padding:6px 10px;border-left:4px solid;cursor:pointer}.ds-list li+li{border-top:1px solid var(--border)}.ds-path{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere}.ds-added{background:var(--added);border-left-color:var(--added-bar)}.ds-changed{background:var(--changed);border-left-color:var(--changed-bar)}.ds-b{padding:2px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--fg);font:inherit;font-size:.85rem;cursor:pointer}.ds-b:hover{border-color:var(--accent)}.ds-b:focus-visible{outline:2px solid var(--accent);outline-offset:1px}"
+      "html": "<ul class=\"ds-list\"><li class=\"ds-added\"><span>aggiunta</span><span class=\"ds-path\">$.db.pool</span><span>5</span><span><button class=\"ds-b\">A → B</button> <button class=\"ds-b\">B → A</button></span></li><li class=\"ds-changed ds-sel\"><span>modificata</span><span class=\"ds-path\">$.server.port</span><span>8080 → 9090</span><span><button class=\"ds-b\">A → B</button> <button class=\"ds-b\">B → A</button></span></li></ul>",
+      "css": ":host{--canvas:#e6e9ee;--bg:#ffffff;--fg:#1d2330;--muted:#5f6878;--border:#d9dde5;--panel:#f6f7f9;--accent:#3b6fd8;--error:#c42b2b;--added:#e3f6e8;--added-bar:#2e9e50;--removed:#fde7e7;--removed-bar:#d0393e;--changed:#fff4cc;--changed-bar:#a87f00;--type:#ffe6d1;--type-bar:#c55a12;--moved:#e1ecff;--moved-bar:#3b6fd8;--whitespace:#eef0f3;--whitespace-bar:#7a8496;--applied:#e3e6ea;font-family:system-ui,-apple-system,\"Segoe UI\",sans-serif;color:var(--fg)} .ds-list{margin:0;padding:0;list-style:none;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--bg)}.ds-list li{display:grid;grid-template-columns:8em minmax(0,1fr) minmax(0,2fr) auto;align-items:center;gap:8px;padding:6px 10px;border-left:4px solid;cursor:pointer}.ds-list li+li{border-top:1px solid var(--border)}.ds-sel{outline:2px solid var(--accent);outline-offset:-2px}.ds-path{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere}.ds-added{background:var(--added);border-left-color:var(--added-bar)}.ds-removed{background:var(--removed);border-left-color:var(--removed-bar)}.ds-changed{background:var(--changed);border-left-color:var(--changed-bar)}.ds-type{background:var(--type);border-left-color:var(--type-bar)}.ds-moved{background:var(--moved);border-left-color:var(--moved-bar)}.ds-whitespace{background:var(--whitespace);border-left-color:var(--whitespace-bar)}.ds-b{padding:2px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--fg);font:inherit;font-size:.85rem;white-space:nowrap;cursor:pointer;transition:border-color 120ms ease-out}.ds-b:hover{border-color:var(--accent)}.ds-b:focus-visible{outline:2px solid var(--accent);outline-offset:2px}"
+    },
+    {
+      "name": "Notice and Status Line",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "A refused apply in Alarm Red on Paper; the neutral outcome of the last change with its way back.",
+      "html": "<div class=\"ds-notice\" role=\"alert\">Impossibile riportare automaticamente questa modifica</div><div class=\"ds-status\" role=\"status\"><span>Riportato in File B · values-svil.yaml.</span><button class=\"ds-btn-small\">Annulla</button></div>",
+      "css": ":host{--canvas:#e6e9ee;--bg:#ffffff;--fg:#1d2330;--muted:#5f6878;--border:#d9dde5;--panel:#f6f7f9;--accent:#3b6fd8;--error:#c42b2b;--added:#e3f6e8;--added-bar:#2e9e50;--removed:#fde7e7;--removed-bar:#d0393e;--changed:#fff4cc;--changed-bar:#a87f00;--type:#ffe6d1;--type-bar:#c55a12;--moved:#e1ecff;--moved-bar:#3b6fd8;--whitespace:#eef0f3;--whitespace-bar:#7a8496;--applied:#e3e6ea;font-family:system-ui,-apple-system,\"Segoe UI\",sans-serif;color:var(--fg)} .ds-notice{margin-bottom:12px;padding:8px 12px;border:1px solid var(--error);border-radius:6px;background:var(--bg);color:var(--error);animation:ds-arrive 180ms cubic-bezier(0.16,1,0.3,1)}.ds-status{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:6px 12px;border:1px solid var(--border);border-radius:6px;background:var(--panel);animation:ds-arrive 180ms cubic-bezier(0.16,1,0.3,1)}.ds-btn-small{padding:2px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--fg);font:inherit;font-size:.85rem;white-space:nowrap;cursor:pointer;transition:border-color 120ms ease-out}.ds-btn-small:hover{border-color:var(--accent)}.ds-btn-small:focus-visible{outline:2px solid var(--accent);outline-offset:2px}@keyframes ds-arrive{from{opacity:0;transform:translateY(-3px)}}@media (prefers-reduced-motion:reduce){@keyframes ds-arrive{from{opacity:0}}}"
     }
   ],
   "narrative": {
     "northStar": "The Change Ledger",
-    "overview": "Every difference is an entry in a ledger. It has a kind, a color that says which kind, a path, a line number, and an action that copies it to the other file. The interface is the ledger's paper: neutral, ruled with hairlines, and quiet enough that the entries are what you read. Color is almost never decoration. A colored surface means \"this is a difference of this kind\", and the six kind colors stay consistent across chips, list rows, editor lines, tree nodes and matrix cells.\n\nThe tone is precise but friendly. Layouts are dense, fonts are the system's own, and the chrome sticks to the conventions engineers already know from editors and diff viewers. Softer touches (gently rounded corners, a pill around each loaded file name, a dashed \"+ Aggiungi file\" affordance) keep a tool built for repeated expert use from feeling hostile. Light and dark themes both ship, following the OS through `prefers-color-scheme`.",
+    "overview": "Every difference is an entry in a ledger. It has a kind, a color that says which kind, a path, a line number, and an action that copies it to the other file. The interface is the ledger's paper: neutral, ruled with hairlines, and quiet enough that the entries are what you read. Color is almost never decoration. A colored surface means \"this is a difference of this kind\", and the six kind colors stay consistent across chips, list rows, editor lines, tree nodes and matrix cells.\n\nThe tone is precise but friendly. Layouts are dense, fonts are the system's own, and the chrome sticks to the conventions engineers already know from editors and diff viewers. Softer touches (gently rounded corners, a pill around each loaded file name, a dashed \"+ Aggiungi file\" affordance) keep a tool built for repeated expert use from feeling hostile. Light and dark themes both ship: Auto follows the OS through `prefers-color-scheme`, Chiaro and Scuro pin one.\n\nThe ledger is still. Motion only says where to look and that something happened: a Signal Blue **wash** that dries away on editor lines where a selection lands or an apply has just written, a short arrival for each new outcome message, and pickers that unroll from their field. Nothing moves on load, while the result recomputes, or for its own sake.",
     "keyCharacteristics": [
-      "Flat, bordered surfaces on two neutral levels (paper and bench gray). No shadows.",
-      "One interactive accent, Signal Blue, for selection, focus, the base file and links.",
+      "Flat, bordered surfaces on three tonal levels (canvas, bench gray, paper). No shadows.",
+      "One interactive accent, Signal Blue, for selection, focus, hover and the base file.",
       "A closed set of six difference-kind color pairs (a tint plus a bar), used everywhere a difference appears.",
       "System UI font for chrome, system monospace for anything that is data.",
-      "Small, compact controls (2px × 8px padding on secondary buttons, 28px icon buttons)."
+      "Small, compact controls (2px × 8px padding on small buttons, 28px icon buttons).",
+      "Motion as a pointer, not a performance: the wash, arrivals, unrolling pickers."
     ],
     "rules": [
       {
+        "name": "The Still Ledger Rule",
+        "body": "Never animate layout, entrances on load, or the recomputed result. Motion marks the user's own action and its outcome, nothing else.",
+        "section": "overview"
+      },
+      {
         "name": "The Ledger Color Rule",
-        "section": "colors",
-        "body": "A kind color appears only where that kind of difference appears. Never use Added Green for \"success\", Changed Ochre for \"warning\" or Removed Red for \"delete\" in unrelated chrome. The six pairs are reserved vocabulary."
+        "body": "A kind color appears only where that kind of difference appears. Never use Added Green for \"success\", Changed Ochre for \"warning\" or Removed Red for \"delete\" in unrelated chrome. The six pairs are reserved vocabulary.",
+        "section": "colors"
       },
       {
         "name": "The Tint-Plus-Bar Rule",
-        "section": "colors",
-        "body": "A difference is always shown as a pale tint with a 4px saturated left bar. Never a full-saturation fill, and never the tint without the bar."
+        "body": "A difference is always shown as a pale tint with a 4px saturated left bar. Never a full-saturation fill, and never the tint without the bar.",
+        "section": "colors"
       },
       {
         "name": "The One Accent Rule",
-        "section": "colors",
-        "body": "Signal Blue is the only interactive color. Selection, focus, the base file and hover all use it. Don't add a second accent."
+        "body": "Signal Blue is the only interactive color. Selection, focus, the base file, hover and the wash all use it. Don't add a second accent.",
+        "section": "colors"
       },
       {
         "name": "The Data Is Mono Rule",
-        "section": "typography",
-        "body": "Anything the user could copy into a file or a path field (keys, values, paths, line content) is set in monospace. Labels about data are set in the sans."
+        "body": "Anything the user could copy into a file or a path field (keys, values, paths, line content) is set in monospace. Labels about data are set in the sans.",
+        "section": "typography"
       },
       {
         "name": "The Flat Ledger Rule",
-        "section": "elevation",
-        "body": "Surfaces never cast shadows. If something needs emphasis, change its border or tint, not its elevation."
+        "body": "Surfaces never cast shadows. If something needs emphasis, change its border, tint or outline, not its elevation.",
+        "section": "elevation"
       }
     ],
     "dos": [
-      "Do show every difference as a tint plus a 4px left bar in that kind's ledger pair, in every view (chip, row, line, cell).",
-      "Do use Signal Blue as the only signal for selection, focus, hover and the base file.",
-      "Do set keys, values, paths and file content in system monospace at 13px.",
-      "Do keep surfaces flat: Bench Gray panels holding Paper working surfaces, outlined with 1px Hairline borders.",
-      "Do give icon-only buttons an `aria-label` and a tooltip.",
-      "Do define every new color as a CSS custom property with a dark-theme value under `prefers-color-scheme: dark`."
+      "**Do** show every difference as a tint plus a 4px left bar in that kind's ledger pair, in every view (chip, row, line, cell).",
+      "**Do** use Signal Blue as the only signal for selection, focus, hover, the base file and the wash.",
+      "**Do** set keys, values, paths and file content in system monospace at 13px.",
+      "**Do** keep surfaces flat: Bench Gray panels holding Paper working surfaces on the Canvas, outlined with 1px Hairline borders.",
+      "**Do** give icon-only buttons an `aria-label` and a tooltip, and disabled controls a tooltip that says why.",
+      "**Do** define every new color as a CSS custom property with a dark-theme value in both dark blocks: the `prefers-color-scheme: dark` one (for Auto) and `:root[data-theme='dark']` (for Scuro).",
+      "**Do** keep motion to the wash, arrivals and unrolling pickers, with a `prefers-reduced-motion` path for each."
     ],
     "donts": [
-      "Don't use the ledger kind colors for generic success, warning or danger states in chrome.",
-      "Don't add drop shadows or elevation. Emphasize with borders, tints and outlines.",
-      "Don't introduce a second accent color or a web font. The system font stack is the identity.",
-      "Don't set data (paths, keys, values) in the sans or as prose.",
-      "Don't use full-saturation fills for differences. Tints carry the area and bars carry the signal."
+      "**Don't** use the ledger kind colors for generic success, warning or danger states in chrome.",
+      "**Don't** add drop shadows or elevation. Emphasize with borders, tints and outlines.",
+      "**Don't** introduce a second accent color or a web font. The system font stack is the identity.",
+      "**Don't** set data (paths, keys, values) in the sans or as prose.",
+      "**Don't** use full-saturation fills for differences. Tints carry the area and bars carry the signal.",
+      "**Don't** animate the recomputed result, layout changes or the page load."
     ]
   }
 }

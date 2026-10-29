@@ -13,6 +13,31 @@ Confronto semantico tra file chiave-valore (JSON, YAML) nel browser. I file non 
 - **Root**: path (es. `config`, `$.spec.template`, `users[name=alice]`) il cui valore viene usato al posto del documento nei file che lo contengono; utile per confrontare un file annidato con uno non annidato
 - **Includi**: path relativi alla root separati da virgola (es. `server, db.pool`): confronta solo quei sottoalberi.
   **Scegli** apre l'albero dei sottoalberi presenti nei file (unione) per spuntarli
+- **Escludi**: path relativi alla root separati da virgola (es. `server.tls, db.password`): quei sottoalberi restano
+  fuori dal confronto, anche se dentro un sottoalbero incluso. **Scegli** funziona come per Includi
+
+## Configurazioni
+
+**Salva configurazione** scarica tutte le opzioni in un file JSON, con il nome scritto nel campo accanto (`.json`
+viene aggiunto; vuoto = `ledger-config.json`). **Carica configurazione…** le reimposta da un file salvato e ne
+riprende il nome. Forma del file:
+
+```json
+{
+  "root": "$.config",
+  "include": ["$.server"],
+  "exclude": ["$.server.tls"],
+  "keys": true,
+  "values": true,
+  "whitespace": false,
+  "keyOrder": false,
+  "ignoreArrayOrder": true,
+  "looseTypes": false,
+  "arrayKeyField": "name"
+}
+```
+
+Le opzioni assenti nel file restano come sono; `include` ed `exclude` possono essere anche una sola stringa.
 
 ## Card dei file
 
@@ -40,8 +65,12 @@ Confronto semantico tra file chiave-valore (JSON, YAML) nel browser. I file non 
 - Click su una differenza: il nodo viene selezionato in entrambi gli editor e le righe si evidenziano nel gutter.
 - Pulsanti `A → B` / `B → A`: riportano la modifica nell'altro file toccando solo il testo di quel nodo
   (valori, chiavi o elementi aggiunti/rimossi, righe di formattazione). Il risultato viene verificato prima di
-  applicarlo; se non è possibile farlo in modo sicuro compare un avviso. **Annulla** nella riga di stato lo
+  applicarlo: il file deve restare valido, il nodo deve avere il nuovo valore e nient'altro nel documento può
+  cambiare (per esempio un alias YAML di quel nodo); l'editor scrive solo il testo esattamente verificato. Se non
+  è possibile farlo in modo sicuro compare un avviso e il file resta com'era. **Annulla** nella riga di stato lo
   ripristina.
+- I file con fine riga Windows (CRLF) vengono mostrati e confrontati con fine riga LF, e **Salva** li riscrive
+  in CRLF.
 - Le righe cambiate da un riporto restano evidenziate in grigio nell'editor (`+` righe aggiunte, `−` righe
   rimosse) finché il contenuto non viene sostituito.
 - **Salva** su ogni pannello scarica il contenuto attuale.

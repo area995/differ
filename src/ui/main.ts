@@ -17,7 +17,7 @@ import { parse } from '../core/parse';
 import { PATCH_ERROR, applyEntry, locateEntry, patchSupport, type Direction, type PatchDoc } from '../core/patch';
 import { parsePath, parsePathList, selectNode } from '../core/select';
 import { buildUnion } from '../core/union';
-import { el } from './dom';
+import { arrive, el } from './dom';
 import { createInputPanel, type InputPanel, type InputState } from './input';
 import { renderMatrix } from './matrix';
 import { createOptionsBar } from './options';
@@ -49,6 +49,7 @@ byId('result').before(notice);
 function showNotice(message: string | null): void {
   notice.hidden = !message;
   notice.textContent = message ?? '';
+  if (message) arrive(notice);
 }
 
 // outcome of the last change (applied, removed…), with a way back when there is one
@@ -65,6 +66,7 @@ function showStatus(message: string | null, action?: { label: string; run(): voi
   const text = el('span');
   text.textContent = message;
   status.append(text);
+  arrive(status);
   if (action) {
     const button = el('button');
     button.type = 'button';
@@ -267,13 +269,14 @@ function run(): void {
   const sameFormat = new Set(filled.map((f) => f.a.format)).size <= 1;
   const rootPath = parsePath(opts.root);
   const includes = parsePathList(opts.include);
+  const excludes = parsePathList(opts.exclude, 'Escludi');
   const hasBase = filled.some((f) => f.slot.letter === baseLetter);
 
-  if (!rootPath.ok || !includes.ok || !hasBase || filled.length < 2 || filled.some((f) => !f.a.result.ok)) {
-    const syntaxError = !rootPath.ok ? rootPath.error : !includes.ok ? includes.error : null;
+  if (!rootPath.ok || !includes.ok || !excludes.ok || !hasBase || filled.length < 2 || filled.some((f) => !f.a.result.ok)) {
+    const syntaxError = !rootPath.ok ? rootPath.error : !includes.ok ? includes.error : !excludes.ok ? excludes.error : null;
     optionsBar.setScopeMessage(syntaxError, 'error');
     optionsBar.setWhitespaceEnabled(sameFormat, SAME_FORMAT_ONLY);
-    optionsBar.setIncludeTree(null);
+    optionsBar.setSubtrees(null, syntaxError ? 'Correggi Root, Includi o Escludi per scegliere i sottoalberi' : undefined);
     renderWaiting(byId('result'), waitingMessage(syntaxError !== null, filled, hasBase), answer);
     for (const s of slots) s.panel.setDiffMarks(new Map());
     pending = null;
@@ -282,8 +285,12 @@ function run(): void {
   const loaded = filled.map((f) => load(f.slot, f.a, rootPath.path));
   const keyField = opts.ignoreArrayOrder ? opts.arrayKeyField : '';
   const union = buildUnion(loaded.map((l) => l.doc.node), keyField);
-  optionsBar.setIncludeTree(unionItems(union, loaded.map((l) => short(l.slot))));
-  const notes = [rootMessage(formatPath(rootPath.path), loaded), ...missingIncludes(includes.paths, loaded)];
+  optionsBar.setSubtrees(unionItems(union, loaded.map((l) => short(l.slot))));
+  const notes = [
+    rootMessage(formatPath(rootPath.path), loaded),
+    ...missingPaths('Includi', includes.paths, loaded),
+    ...missingPaths('Escludi', excludes.paths, loaded),
+  ];
   const info = notes.filter((n): n is string => n !== null);
   optionsBar.setScopeMessage(info.length ? info.join('\n') : null, 'info');
 
@@ -295,14 +302,14 @@ function run(): void {
   const others = loaded.filter((l) => l !== base);
   const entries = others.map((o) => {
     const raw = sameFormat && !oneSided ? { a: base.doc.text, b: o.doc.text } : undefined;
-    return filterEntries(diff(base.doc.node, o.doc.node, opts, raw), includes.paths);
+    return filterEntries(diff(base.doc.node, o.doc.node, opts, raw), includes.paths, excludes.paths);
   });
   // each editor shows its own differences: the base all of them, every other file those against the base
   for (const s of slots) if (!loaded.some((l) => l.slot === s)) s.panel.setDiffMarks(new Map());
   base.slot.panel.setDiffMarks(lineMarks(entries.flat(), 'a'));
   others.forEach((o, i) => o.slot.panel.setDiffMarks(lineMarks(entries[i], 'b')));
 
-  const scope = scopeNote(loaded, rootPath.path, includes.paths);
+  const scope = scopeNote(loaded, rootPath.path, includes.paths, excludes.paths);
   const place = pending;
   pending = null;
   if (others.length === 1) renderPair(base, others[0], entries[0], scope, place?.row ?? null);
@@ -311,12 +318,13 @@ function run(): void {
 
 /**
  * What the comparison leaves out, so that "equivalent" is never read as "identical files":
- * the root, the included subtrees and the main difference kinds turned off.
+ * the root, the included and excluded subtrees and the main difference kinds turned off.
  */
-function scopeNote(loaded: Loaded[], root: Path, includes: Path[]): string | null {
+function scopeNote(loaded: Loaded[], root: Path, includes: Path[], excludes: Path[]): string | null {
   const limits: string[] = [];
   if (loaded.some((l) => l.applied)) limits.push(`solo la root ${formatPath(root)}`);
   if (includes.length) limits.push(`solo i sottoalberi ${includes.map(formatPath).join(', ')}`);
+  if (excludes.length) limits.push(`esclusi i sottoalberi ${excludes.map(formatPath).join(', ')}`);
   if (!opts.keys) limits.push('chiavi aggiunte o rimosse escluse');
   if (!opts.values) limits.push('valori diversi esclusi');
   return limits.length ? `Confronto parziale: ${limits.join('; ')}.` : null;
@@ -324,7 +332,7 @@ function scopeNote(loaded: Loaded[], root: Path, includes: Path[]): string | nul
 
 /** Why there is no comparison, and what to do about it. */
 function waitingMessage(badScope: boolean, filled: { slot: Slot; a: Analysis }[], hasBase: boolean): string {
-  if (badScope) return 'Correggi Root o Includi per aggiornare il confronto.';
+  if (badScope) return 'Correggi Root, Includi o Escludi per aggiornare il confronto.';
   const broken = filled.filter((f) => !f.a.result.ok).map((f) => name(f.slot));
   if (broken.length) return `Correggi gli errori di sintassi in ${broken.join(', ')} per aggiornare il confronto.`;
   if (filled.length < 2) return 'Incolla o apri almeno due file per confrontarli.';
@@ -462,10 +470,15 @@ function applyChange(entry: DiffEntry, direction: Direction, a: Loaded, b: Loade
     showNotice(r.error);
     return false;
   }
-  showNotice(null);
   const target = direction === 'aToB' ? b : a;
   const before = new Map([[target.slot, target.slot.input.text]]);
-  target.slot.panel.replace(r.edit);
+  if (!target.slot.panel.replace(r.edit, r.text)) {
+    // what the editor holds is not the text the change was checked on: never write an unchecked result
+    showNotice(PATCH_ERROR);
+    run();
+    return false;
+  }
+  showNotice(null);
   // the editors are read-only, so the way back is offered here rather than through Ctrl+Z
   const after = new Map([[target.slot, target.slot.input.text]]);
   showStatus(`Riportato in ${title(target.slot)}.`, { label: 'Annulla', run: () => undoAll(before, after) });
@@ -479,15 +492,15 @@ function undoAll(before: Map<Slot, string>, after: Map<Slot, string>, done = 'Ri
     showNotice('Il file è cambiato dopo il riporto: non si può più annullare.');
     return;
   }
-  for (const [slot, text] of before) slot.panel.replace({ start: 0, end: slot.input.text.length, text });
+  for (const [slot, text] of before) slot.panel.replace({ start: 0, end: slot.input.text.length, text }, text);
   showStatus(done);
 }
 
-function missingIncludes(paths: Path[], loaded: Loaded[]): string[] {
+function missingPaths(field: string, paths: Path[], loaded: Loaded[]): string[] {
   const where = loaded.length === 2 ? `né in ${short(loaded[0].slot)} né in ${short(loaded[1].slot)}` : 'in nessun file';
   return paths
     .filter((p) => loaded.every((l) => !selectNode(l.doc.node, p)))
-    .map((p) => `Includi: ${formatPath(p)} non trovato ${where}`);
+    .map((p) => `${field}: ${formatPath(p)} non trovato ${where}`);
 }
 
 function rootMessage(path: string, loaded: Loaded[]): string | null {

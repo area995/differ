@@ -46,6 +46,7 @@ function setText(placeholderStart: string, text: string): void {
 
 const setRoot = (text: string) => setText('tutto il documento', text);
 const setInclude = (text: string) => setText('tutti i sottoalberi', text);
+const setExclude = (text: string) => setText('nessun sottoalbero', text);
 
 /** Text of the answer bar (counts, "equivalent" or what is missing), without the selected difference. */
 const answerText = () =>
@@ -54,9 +55,20 @@ const answerText = () =>
     .map((c) => c.textContent)
     .join('');
 
+/** Classes of the editor shade behind a line, without the passing wash (motion only). */
+const lasting = (e: Element) => [...e.classList].filter((c) => !c.startsWith('wash')).join(' ');
+
 /** Class of the editor shade behind a line of a file ('a', 'b'…). */
-const shade = (file: string, line: number) =>
-  document.querySelectorAll(`#input-${file} .backdrop-lines > div`)[line - 1]?.className;
+const shade = (file: string, line: number) => {
+  const e = document.querySelectorAll(`#input-${file} .backdrop-lines > div`)[line - 1];
+  return e && lasting(e);
+};
+
+/** Lines of a file under a wash of the given kind. */
+const washed = (file: string, kind: 'land' | 'post') =>
+  [...document.querySelectorAll(`#input-${file} .backdrop-lines > div`)].flatMap((d, i) =>
+    d.classList.contains(`wash-${kind}`) ? [i + 1] : [],
+  );
 
 const press = (target: HTMLElement, key: string) =>
   target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
@@ -161,7 +173,7 @@ describe('app', () => {
     setRoot('server[');
     expect(scopeMessage()).toBe('Root non valida: server[');
     expect(document.querySelector('.scope-msg')!.classList.contains('error')).toBe(true);
-    expect(answerText()).toBe('Correggi Root o Includi per aggiornare il confronto.');
+    expect(answerText()).toBe('Correggi Root, Includi o Escludi per aggiornare il confronto.');
 
     setRoot('');
     expect(scopeMessage()).toBe('');
@@ -186,11 +198,124 @@ describe('app', () => {
     setInclude('server, db[');
     expect(scopeMessage()).toBe('Includi non valido: db[');
     expect(document.querySelector('.scope-msg')!.classList.contains('error')).toBe(true);
-    expect(answerText()).toBe('Correggi Root o Includi per aggiornare il confronto.');
+    expect(answerText()).toBe('Correggi Root, Includi o Escludi per aggiornare il confronto.');
 
     setInclude('');
     setRoot('');
     expect(scopeMessage()).toBe('');
+  });
+
+  it('leaves the excluded subtrees out, even inside an included one', () => {
+    type(0, 'server:\n  port: 1\n  tls: on\ndb:\n  pool: 5\n');
+    type(1, 'server:\n  port: 2\n  tls: off\ndb:\n  pool: 9\n');
+    expect(items()).toHaveLength(3);
+
+    setExclude('server.tls, db');
+    expect(items()).toEqual(['modificata$.server.port1 → 2']);
+    expect(shade('a', 5)).toBe('');
+
+    setInclude('server');
+    setExclude('server.tls, nope');
+    expect(items()).toEqual(['modificata$.server.port1 → 2']);
+    expect(scopeMessage()).toBe('Escludi: $.nope non trovato né in A né in B');
+
+    setExclude('server');
+    expect(document.querySelector('.equal-scope')?.textContent).toBe(
+      'Confronto parziale: solo i sottoalberi $.server; esclusi i sottoalberi $.server.',
+    );
+
+    setExclude('db[');
+    expect(scopeMessage()).toBe('Escludi non valido: db[');
+    expect(answerText()).toBe('Correggi Root, Includi o Escludi per aggiornare il confronto.');
+
+    setExclude('');
+    setInclude('');
+  });
+
+  it('saves all the options to a named JSON file and loads them back', async () => {
+    const field = (start: string) => document.querySelector<HTMLInputElement>(`#options input[placeholder^="${start}"]`)!;
+    const message = () => document.querySelector<HTMLElement>('.config-msg')!;
+    const configName = document.querySelector<HTMLInputElement>('.config-name')!;
+    type(0, 'server:\n  port: 1\n  tls: on\n');
+    type(1, 'server:\n  port: 2\n  tls: off\n');
+
+    setInclude('server');
+    setExclude('server.tls');
+    toggle('Ignora ordine array');
+    setText('campo chiave', 'name');
+    configName.value = 'prod';
+    const created: Blob[] = [];
+    URL.createObjectURL = vi.fn((blob: Blob) => {
+      created.push(blob);
+      return 'blob:config';
+    });
+    URL.revokeObjectURL = vi.fn();
+    let downloaded = '';
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      downloaded = this.download;
+    });
+    document.querySelector<HTMLButtonElement>('.config-save')!.click();
+    click.mockRestore();
+    expect(downloaded).toBe('prod.json');
+    expect(message().textContent).toBe('Configurazione salvata come prod.json');
+    const saved = await created[0].text();
+    expect(JSON.parse(saved)).toEqual({
+      root: '',
+      include: ['$.server'],
+      exclude: ['$.server.tls'],
+      keys: true,
+      values: true,
+      // left on by an earlier test
+      whitespace: option('Spazi e tabulazioni').checked,
+      keyOrder: false,
+      ignoreArrayOrder: true,
+      looseTypes: false,
+      arrayKeyField: 'name',
+    });
+
+    setInclude('');
+    setExclude('');
+    setText('campo chiave', '');
+    toggle('Ignora ordine array');
+    configName.value = '';
+    expect(items()).toHaveLength(2);
+
+    const input = document.querySelector<HTMLInputElement>('.config-actions input[type="file"]')!;
+    expect(input.accept).toContain('.json');
+    const load = (text: string, name = 'prod.json') => {
+      Object.defineProperty(input, 'files', { value: [new File([text], name)], configurable: true });
+      input.dispatchEvent(new Event('change'));
+    };
+    load(saved);
+    await vi.waitFor(() => expect(field('tutti i sottoalberi').value).toBe('$.server'));
+    expect(field('nessun sottoalbero').value).toBe('$.server.tls');
+    expect(option('Ignora ordine array').checked).toBe(true);
+    expect(document.querySelector<HTMLElement>('.key-field')!.hidden).toBe(false);
+    expect(field('campo chiave').value).toBe('name');
+    expect(configName.value).toBe('prod');
+    expect(message().textContent).toBe('Configurazione caricata da prod.json');
+    vi.advanceTimersByTime(300);
+    expect(items()).toEqual(['modificata$.server.port1 → 2']);
+
+    // an option the file leaves out keeps its value
+    load('{"exclude": []}', 'partial.json');
+    await vi.waitFor(() => expect(field('nessun sottoalbero').value).toBe(''));
+    expect(field('tutti i sottoalberi').value).toBe('$.server');
+    expect(option('Ignora ordine array').checked).toBe(true);
+
+    load('{"exclude": 3}', 'bad.json');
+    await vi.waitFor(() => expect(message().classList.contains('error')).toBe(true));
+    expect(message().textContent).toBe('bad.json: Configurazione non valida: "exclude" deve essere una lista di path');
+    expect(configName.value).toBe('partial');
+
+    setExclude('a[');
+    document.querySelector<HTMLButtonElement>('.config-save')!.click();
+    expect(message().textContent).toBe('Impossibile salvare: Escludi non valido: a[');
+
+    setExclude('');
+    setInclude('');
+    setText('campo chiave', '');
+    toggle('Ignora ordine array');
   });
 
   it('selects the clicked difference in both editors', () => {
@@ -204,6 +329,9 @@ describe('app', () => {
     expect(document.querySelector('#input-b .gutter .cur')?.textContent).toBe('2');
     // visible without focusing the editors: framed in the backdrop, quoted in the answer bar
     expect(shade('a', 2)).toBe('d-changed cur cur-start cur-end');
+    // the eye is led to where each editor landed
+    expect(washed('a', 'land')).toEqual([2]);
+    expect(washed('b', 'land')).toEqual([2]);
     expect(document.querySelector('.answer .evidence')!.textContent).toBe('$.bAr. 2b: 2Br. 2b: 3');
   });
 
@@ -284,7 +412,7 @@ describe('app', () => {
   it('keeps applied changes highlighted in the editor until it is edited by hand', () => {
     const signs = () =>
       [...document.querySelectorAll('#input-b .gutter span')].map((s) => s.getAttribute('data-sign') ?? '');
-    const shades = () => [...document.querySelectorAll('#input-b .backdrop-lines > div')].map((d) => d.className);
+    const shades = () => [...document.querySelectorAll('#input-b .backdrop-lines > div')].map(lasting);
 
     type(0, 'a: 1\nb: 2\n');
     type(1, 'a: 5\nc: 3\n');
@@ -296,6 +424,8 @@ describe('app', () => {
     expect(textareas()[1].value).toBe('a: 1\nb: 2\n');
     expect(signs()).toEqual(['', '+', '−']);
     expect(shades()).toEqual(['applied', 'applied', 'removed-before']);
+    // the last apply (deleting c) wrote at line 3
+    expect(washed('b', 'post')).toContain(3);
 
     type(1, 'a: 1\nb: 3\n');
     expect(signs()).toEqual(['', '', '']);
@@ -312,6 +442,27 @@ describe('app', () => {
     vi.advanceTimersByTime(300);
     expect(paste.defaultPrevented).toBe(true);
     expect(ta.value).toBe('x: 1\n');
+  });
+
+  it('applies to files with Windows line endings without shifting the change', () => {
+    const paste = (index: number, text: string) => {
+      const event = new Event('paste', { bubbles: true, cancelable: true });
+      Object.defineProperty(event, 'clipboardData', { value: { getData: () => text } });
+      textareas()[index].dispatchEvent(event);
+      vi.advanceTimersByTime(300);
+    };
+    const crlf = (lines: string[]) => lines.join('\r\n') + '\r\n';
+    paste(0, crlf(['kafka:', '  storage: 50Gi', 'connect:', '  image: kc:1.1.7', '  replicas: 1']));
+    paste(1, crlf(['kafka:', '  storage: 10Gi', 'connect:', '  image: kc:1.1.7', '  replicas: 1']));
+    expect(items()).toEqual(['modificata$.kafka.storage"50Gi" → "10Gi"']);
+
+    apply(0, 'A → B');
+    expect(textareas()[1].value).toBe('kafka:\n  storage: 50Gi\nconnect:\n  image: kc:1.1.7\n  replicas: 1\n');
+    expect(document.querySelector('.equal')).not.toBeNull();
+
+    // back to LF files, as the next tests expect
+    paste(0, 'x: 0\n');
+    paste(1, 'x: 0\n');
   });
 
   it('applies at the node, wherever the cursor is', () => {
@@ -392,6 +543,28 @@ describe('app', () => {
     document.querySelector<HTMLButtonElement>('#input-b .save')!.click();
     expect(click).toHaveBeenCalledOnce();
     expect(await created[0].text()).toBe('x: 1\n');
+    click.mockRestore();
+  });
+
+  it('saves a Windows file with its CRLF line endings, applied changes included', async () => {
+    const created: Blob[] = [];
+    URL.createObjectURL = vi.fn((blob: Blob) => {
+      created.push(blob);
+      return 'blob:test';
+    });
+    URL.revokeObjectURL = vi.fn();
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    const paste = (index: number, text: string) => {
+      const event = new Event('paste', { bubbles: true, cancelable: true });
+      Object.defineProperty(event, 'clipboardData', { value: { getData: () => text } });
+      textareas()[index].dispatchEvent(event);
+      vi.advanceTimersByTime(300);
+    };
+    paste(0, 'a: 1\nb: 2\n');
+    paste(1, 'a: 1\r\nb: 3\r\n');
+    apply(0, 'A → B');
+    document.querySelector<HTMLButtonElement>('#input-b .save')!.click();
+    expect(await created[0].text()).toBe('a: 1\r\nb: 2\r\n');
     click.mockRestore();
   });
 });
@@ -625,6 +798,38 @@ describe('app with more than two files', () => {
     expect(box('$.db').checked).toBe(true);
     setInclude('');
     document.querySelector<HTMLButtonElement>('.include-pick')!.click();
+    expect(picker().hidden).toBe(true);
+  });
+
+  it('picks excluded subtrees from their own tree', () => {
+    const picker = () => document.querySelector<HTMLElement>('.exclude-picker')!;
+    const box = (id: string) =>
+      picker().querySelector<HTMLInputElement>(`.tree-row[data-id="${id}"] input[type=checkbox]`)!;
+    const field = () => document.querySelector<HTMLInputElement>('#options input[placeholder^="nessun"]')!;
+
+    type(0, 'server:\n  port: 1\ndb:\n  pool: 5\n');
+    type(1, 'server:\n  port: 2\ndb:\n  pool: 6\n');
+    document.querySelector<HTMLButtonElement>('.exclude-pick')!.click();
+    expect(picker().hidden).toBe(false);
+    expect(document.querySelector<HTMLElement>('.include-picker')!.hidden).toBe(true);
+
+    expect(box('$.db').getAttribute('aria-label')).toBe('Escludi $.db');
+    box('$.db').click();
+    vi.advanceTimersByTime(300);
+    expect(field().value).toBe('$.db');
+    expect([box('$.db.pool').checked, box('$.db.pool').disabled]).toEqual([true, true]);
+    expect(box('$.db.pool').title).toBe('Escluso tramite un nodo superiore');
+
+    // with an invalid path the picker says what to fix, not that files are missing
+    setInclude('db[');
+    expect(picker().textContent).toBe('Correggi Root, Includi o Escludi per scegliere i sottoalberi');
+    setInclude('');
+    expect(items()).toEqual(['modificata$.server.port1 → 2']);
+
+    box('$.db').click();
+    vi.advanceTimersByTime(300);
+    expect(field().value).toBe('');
+    document.querySelector<HTMLButtonElement>('.exclude-pick')!.click();
     expect(picker().hidden).toBe(true);
   });
 

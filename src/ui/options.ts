@@ -1,9 +1,12 @@
+import { configFileName, formatConfig, parseConfig } from '../core/config';
 import { formatPath, type DiffOptions } from '../core/model';
 import { parsePathList } from '../core/select';
-import { el } from './dom';
+import { arrive, el } from './dom';
 import { renderTree, type TreeItem } from './tree';
 
-type BoolKey = Exclude<keyof DiffOptions, 'arrayKeyField' | 'root' | 'include'>;
+type ListKey = 'include' | 'exclude';
+type PathKey = 'root' | ListKey;
+type BoolKey = Exclude<keyof DiffOptions, 'arrayKeyField' | PathKey>;
 
 /** "show" = which kinds of difference are reported; "match" = how the documents are matched. */
 const CHECKS: { key: BoolKey; label: string; title: string; group: 'show' | 'match' }[] = [
@@ -31,8 +34,8 @@ function fieldset(legend: string, className: string): HTMLFieldSetElement {
 export type OptionsBar = {
   setWhitespaceEnabled(enabled: boolean, reason: string): void;
   setScopeMessage(message: string | null, kind: 'info' | 'error'): void;
-  /** Subtrees offered by the include picker, or null when the files cannot be read. */
-  setIncludeTree(items: TreeItem[] | null): void;
+  /** Subtrees offered by the Includi and Escludi pickers, or null with the reason shown instead. */
+  setSubtrees(items: TreeItem[] | null, reason?: string): void;
 };
 
 export function createOptionsBar(
@@ -49,7 +52,7 @@ export function createOptionsBar(
   const match = fieldset('Confronto', 'match');
   root.append(scope, show, match);
 
-  const pathField = (key: 'root' | 'include', label: string, placeholder: string, title: string) => {
+  const pathField = (key: PathKey, label: string, placeholder: string, title: string) => {
     const input = el('input');
     input.type = 'text';
     input.placeholder = placeholder;
@@ -64,63 +67,98 @@ export function createOptionsBar(
     scope.append(wrapper);
     return input;
   };
-  pathField(
+  const rootInput = pathField(
     'root',
     'Root',
     'tutto il documento (es. $.server)',
     'Path il cui valore sostituisce il documento nei file che lo contengono. Si può copiare dalla lista differenze.',
   );
-  const includeInput = pathField(
-    'include',
-    'Includi',
-    'tutti i sottoalberi (es. server, db.pool)',
-    'Path relativi alla root, separati da virgola: confronta solo questi sottoalberi.',
-  );
 
-  // tree of the subtrees found in the files, to pick the included ones
-  let includeItems: TreeItem[] | null = null;
-  const pickerExpanded = new Map<string, boolean>();
-  const pick = el('button', 'include-pick');
-  pick.type = 'button';
-  pick.textContent = 'Scegli';
-  pick.title = 'Scegli i sottoalberi da includere';
-  pick.setAttribute('aria-expanded', 'false');
-  scope.append(pick);
-  const picker = el('div', 'include-picker');
-  picker.hidden = true;
-
-  const selectedIds = (): string[] => {
-    const parsed = parsePathList(opts.include);
-    return parsed.ok ? parsed.paths.map(formatPath) : [];
-  };
+  // subtrees found in the files, offered by the Includi and Escludi pickers
+  let subtrees: TreeItem[] | null = null;
+  let noSubtrees = '';
   const isUnder = (id: string, ancestor: string) => id.startsWith(`${ancestor}.`) || id.startsWith(`${ancestor}[`);
-  const renderPicker = () => {
-    if (picker.hidden) return;
-    if (!includeItems) {
-      picker.textContent = 'Carica almeno due file validi per scegliere i sottoalberi';
-      return;
-    }
-    const selected = selectedIds();
-    renderTree(picker, includeItems, {
-      expanded: pickerExpanded,
-      defaultDepth: 1,
-      checks: {
-        state: (id) => (selected.includes(id) ? 'on' : selected.some((s) => isUnder(id, s)) ? 'implied' : 'off'),
-        onChange: (id, checked) => {
-          const kept = selected.filter((s) => s !== id && !(checked && isUnder(s, id)));
-          opts.include = (checked ? [...kept, id] : kept).join(', ');
-          includeInput.value = opts.include;
-          onChange({ ...opts });
-          renderPicker();
+
+  /** A path list field with a "Scegli" button that opens a checkbox tree of the subtrees right below it. */
+  const subtreeField = (
+    key: ListKey,
+    label: string,
+    placeholder: string,
+    title: string,
+    verb: string,
+    implied: string,
+  ) => {
+    const input = pathField(key, label, placeholder, title);
+    const expanded = new Map<string, boolean>();
+    const pick = el('button', `subtree-pick ${key}-pick`);
+    pick.type = 'button';
+    pick.textContent = 'Scegli';
+    pick.title = `Scegli i sottoalberi da ${verb}`;
+    pick.setAttribute('aria-expanded', 'false');
+    const picker = el('div', `subtree-picker ${key}-picker`);
+    picker.hidden = true;
+    scope.append(pick, picker);
+
+    const selectedIds = (): string[] => {
+      const parsed = parsePathList(opts[key]);
+      return parsed.ok ? parsed.paths.map(formatPath) : [];
+    };
+    const render = () => {
+      if (picker.hidden) return;
+      if (!subtrees) {
+        picker.textContent = noSubtrees;
+        return;
+      }
+      const selected = selectedIds();
+      renderTree(picker, subtrees, {
+        expanded,
+        defaultDepth: 1,
+        checks: {
+          label,
+          implied,
+          state: (id) => (selected.includes(id) ? 'on' : selected.some((s) => isUnder(id, s)) ? 'implied' : 'off'),
+          onChange: (id, checked) => {
+            const kept = selected.filter((s) => s !== id && !(checked && isUnder(s, id)));
+            opts[key] = (checked ? [...kept, id] : kept).join(', ');
+            input.value = opts[key];
+            onChange({ ...opts });
+            render();
+          },
         },
-      },
+      });
+    };
+    pick.addEventListener('click', () => {
+      picker.hidden = !picker.hidden;
+      pick.setAttribute('aria-expanded', String(!picker.hidden));
+      render();
     });
+    return {
+      render,
+      /** Shows `opts[key]` after it was changed from outside the field. */
+      set(value: string) {
+        input.value = value;
+        render();
+      },
+    };
   };
-  pick.addEventListener('click', () => {
-    picker.hidden = !picker.hidden;
-    pick.setAttribute('aria-expanded', String(!picker.hidden));
-    renderPicker();
-  });
+  const lists = {
+    include: subtreeField(
+      'include',
+      'Includi',
+      'tutti i sottoalberi (es. server, db.pool)',
+      'Path relativi alla root, separati da virgola: confronta solo questi sottoalberi.',
+      'includere',
+      'Incluso tramite un nodo superiore',
+    ),
+    exclude: subtreeField(
+      'exclude',
+      'Escludi',
+      'nessun sottoalbero (es. server.tls, db.password)',
+      'Path relativi alla root, separati da virgola: questi sottoalberi restano fuori dal confronto, anche se inclusi.',
+      'escludere',
+      'Escluso tramite un nodo superiore',
+    ),
+  };
 
   const fieldInput = el('input');
   fieldInput.type = 'text';
@@ -156,11 +194,81 @@ export function createOptionsBar(
     if (c.key === 'ignoreArrayOrder') match.append(field);
   }
 
+  // all the options saved to a named JSON file and loaded back, to reuse a setup across sessions
+  const configName = el('input', 'config-name');
+  configName.type = 'text';
+  configName.placeholder = 'ledger-config';
+  configName.setAttribute('aria-label', 'Nome del file di configurazione');
+  configName.title = 'Nome del file salvato (.json viene aggiunto)';
+  const configInput = el('input');
+  configInput.type = 'file';
+  configInput.accept = '.json,application/json';
+  configInput.hidden = true;
+  const loadConfig = el('button', 'config-load');
+  loadConfig.type = 'button';
+  loadConfig.textContent = 'Carica configurazione…';
+  loadConfig.title = 'Imposta le opzioni da un file JSON salvato in precedenza';
+  loadConfig.addEventListener('click', () => configInput.click());
+  const saveConfig = el('button', 'config-save');
+  saveConfig.type = 'button';
+  saveConfig.textContent = 'Salva configurazione';
+  saveConfig.title = 'Scarica tutte le opzioni in un file JSON con questo nome, da ricaricare in seguito';
+  const configMessage = el('span', 'config-msg');
+  // the outcome of a button just pressed
+  configMessage.setAttribute('role', 'status');
+  configMessage.hidden = true;
+  const showConfigMessage = (message: string | null, error = false) => {
+    configMessage.hidden = !message;
+    configMessage.textContent = message ?? '';
+    configMessage.classList.toggle('error', error);
+    if (message) arrive(configMessage);
+  };
+  const config = el('div', 'config-actions');
+  config.append(loadConfig, configInput, configName, saveConfig, configMessage);
+  root.append(config);
+
+  configInput.addEventListener('change', async () => {
+    const file = configInput.files?.[0];
+    configInput.value = '';
+    if (!file) return;
+    const r = parseConfig(await file.text());
+    if (!r.ok) {
+      showConfigMessage(`${file.name}: ${r.error}`, true);
+      return;
+    }
+    Object.assign(opts, r.options);
+    rootInput.value = opts.root;
+    lists.include.set(opts.include);
+    lists.exclude.set(opts.exclude);
+    fieldInput.value = opts.arrayKeyField;
+    for (const [key, input] of inputs) input.checked = opts[key];
+    field.hidden = !opts.ignoreArrayOrder;
+    // saved again under the same name unless the user changes it
+    configName.value = file.name.replace(/\.json$/i, '');
+    onChange({ ...opts });
+    showConfigMessage(`Configurazione caricata da ${file.name}`);
+  });
+  saveConfig.addEventListener('click', () => {
+    const r = formatConfig(opts);
+    if (!r.ok) {
+      showConfigMessage(`Impossibile salvare: ${r.error}`, true);
+      return;
+    }
+    const name = configFileName(configName.value);
+    const url = URL.createObjectURL(new Blob([r.text], { type: 'application/json' }));
+    const link = el('a');
+    link.href = url;
+    link.download = name;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+    showConfigMessage(`Configurazione salvata come ${name}`);
+  });
+
   const scopeMessage = el('div', 'scope-msg');
-  // announced politely: it changes while the user types in Root or Includi
+  // announced politely: it changes while the user types in Root, Includi or Escludi
   scopeMessage.setAttribute('role', 'status');
   scopeMessage.hidden = true;
-  scope.append(scopeMessage, picker);
+  scope.append(scopeMessage);
 
   return {
     setWhitespaceEnabled(enabled, reason) {
@@ -174,9 +282,11 @@ export function createOptionsBar(
       scopeMessage.textContent = message ?? '';
       scopeMessage.classList.toggle('error', kind === 'error');
     },
-    setIncludeTree(items) {
-      includeItems = items;
-      renderPicker();
+    setSubtrees(items, reason = 'Carica almeno due file validi per scegliere i sottoalberi') {
+      subtrees = items;
+      noSubtrees = reason;
+      lists.include.render();
+      lists.exclude.render();
     },
   };
 }

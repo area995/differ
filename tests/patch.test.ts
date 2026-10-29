@@ -198,6 +198,33 @@ describe('applyEntry limits', () => {
     expect(applyEntry(e, 'aToB', a, b).ok).toBe(false);
   });
 
+  it('rejects a change that would also change another node, e.g. through an anchor', () => {
+    const refused = { ok: false, error: 'Impossibile riportare automaticamente questa modifica' };
+    const a = doc('base: 2\nother: 1\n');
+    const b = doc('base: &b 1\nother: *b\n');
+    // "other" is an alias of "base": rewriting the anchored value would change it too
+    expect(applyEntry(entry(a, b, 'changed $.base'), 'aToB', a, b)).toEqual(refused);
+
+    const la = doc('list:\n  - 9\n  - 5\n');
+    const lb = doc('list:\n  - &x 5\n  - *x\n');
+    expect(applyEntry(entry(la, lb, 'changed $.list[0]'), 'aToB', la, lb)).toEqual(refused);
+  });
+
+  it('checks the whole document for inserts, removals and items matched by field', () => {
+    const a = doc('users:\n  - name: bob\n    role: admin\n  - name: eve\n    role: dev\nport: 1\n');
+    const b = doc('users:\n  - name: eve\n    role: ops\nport: 1\nextra: 2\n');
+    const opts = { ignoreArrayOrder: true, arrayKeyField: 'name' };
+    expect(patched(a, b, 'changed $.users[name=eve].role', 'aToB', opts)).toBe(
+      'users:\n  - name: eve\n    role: dev\nport: 1\nextra: 2\n',
+    );
+    expect(patched(a, b, 'added $.extra', 'aToB')).toBe(
+      'users:\n  - name: eve\n    role: ops\nport: 1\n',
+    );
+    expect(patched(a, b, 'added $.extra', 'bToA')).toBe(
+      'users:\n  - name: bob\n    role: admin\n  - name: eve\n    role: dev\nport: 1\nextra: 2\n',
+    );
+  });
+
   it('works on the real paths when the root is applied to one side only', () => {
     const fullA = node('config:\n  port: 1\n  host: a\n');
     const fullB = node('port: 2\nhost: a\n');

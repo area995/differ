@@ -43,6 +43,7 @@ export type DiffOptions = {
   looseTypes: boolean;
   root: string;
   include: string;
+  exclude: string;
 };
 
 export const DEFAULT_OPTIONS: DiffOptions = {
@@ -55,6 +56,7 @@ export const DEFAULT_OPTIONS: DiffOptions = {
   looseTypes: false,
   root: '',
   include: '',
+  exclude: '',
 };
 
 export type ParseError = { message: string; pos: Pos };

@@ -84,14 +84,30 @@ export function applyEntry(entry: DiffEntry, direction: Direction, a: PatchDoc, 
   try {
     const plan = makePlan(entry, src, tgt, srcSide, tgtSide);
     const text = tgt.text.slice(0, plan.edit.start) + plan.edit.text + tgt.text.slice(plan.edit.end);
-    if (plan.check(text)) return { ok: true, text, edit: plan.edit };
+    if (plan.check(text) && onlyChange(tgt, text, plan.change)) return { ok: true, text, edit: plan.edit };
   } catch {
     // unsupported layout: fall through
   }
   return { ok: false, error: PATCH_ERROR };
 }
 
-type Plan = { edit: Edit; check: (text: string) => boolean };
+/**
+ * `check` looks at the changed node; `change` is the effect on the whole document as data, which must be
+ * the only difference between the old and the new document (see onlyChange).
+ */
+type Plan = { edit: Edit; check: (text: string) => boolean; change: Change };
+
+/** Paths are from the top of the text, root included. */
+type Change =
+  | { op: 'set'; path: Path; value: unknown }
+  | { op: 'insertItem'; path: Path; index: number; value: unknown }
+  | { op: 'remove'; path: Path }
+  | { op: 'none' };
+
+/** Path of `path` (relative to the compared root) from the top of the document's text. */
+function full(doc: PatchDoc, path: Path): Path {
+  return [...doc.rootPath, ...path];
+}
 
 class Unsupported extends Error {}
 
@@ -137,7 +153,11 @@ function replaceValue(path: Path, src: PatchDoc, tgt: PatchDoc, srcSide: Side, t
       text = ` ${text}`;
     }
   }
-  return { edit: { start, end, text }, check: expectValue(tgt, path, srcSide.value) };
+  return {
+    edit: { start, end, text },
+    check: expectValue(tgt, path, srcSide.value),
+    change: { op: 'set', path: full(tgt, path), value: srcSide.value },
+  };
 }
 
 function replaceLine(path: Path, src: PatchDoc, tgt: PatchDoc, srcLine: number, tgtLine: number): Plan {
@@ -148,7 +168,11 @@ function replaceLine(path: Path, src: PatchDoc, tgt: PatchDoc, srcLine: number, 
   if (!node) throw new Unsupported();
   // formatting only: the value must not change
   const unchanged = expectValue(tgt, path, toPlain(node));
-  return { edit: { start, end, text: line }, check: (text) => lineText(text, tgtLine) === line && unchanged(text) };
+  return {
+    edit: { start, end, text: line },
+    check: (text) => lineText(text, tgtLine) === line && unchanged(text),
+    change: { op: 'none' },
+  };
 }
 
 function lineText(text: string, line: number): string {
@@ -174,7 +198,7 @@ function insert(path: Path, src: PatchDoc, tgt: PatchDoc, srcSide: Side): Plan {
     const edit = flow
       ? insertFlow(src, tgt, parent.range, anchor?.value.range.end, first?.keyRange, srcParent.entries[index], srcSide)
       : insertBlockEntry(src, tgt, anchor, first, srcParent.entries[index], srcSide);
-    return { edit, check: expectValue(tgt, path, srcSide.value) };
+    return { edit, check: expectValue(tgt, path, srcSide.value), change: { op: 'set', path: full(tgt, path), value: srcSide.value } };
   }
 
   if (parent.kind === 'array' && srcParent.kind === 'array') {
@@ -184,7 +208,11 @@ function insert(path: Path, src: PatchDoc, tgt: PatchDoc, srcSide: Side): Plan {
     const edit = flow
       ? insertFlow(src, tgt, parent.range, anchor?.range.end, first?.range, undefined, srcSide)
       : insertBlockItem(src, tgt, anchor, first, srcSide);
-    return { edit, check: expectValue(tgt, [...parentPath, at], srcSide.value) };
+    return {
+      edit,
+      check: expectValue(tgt, [...parentPath, at], srcSide.value),
+      change: { op: 'insertItem', path: full(tgt, parentPath), index: at, value: srcSide.value },
+    };
   }
   throw new Unsupported();
 }
@@ -310,7 +338,7 @@ function remove(path: Path, tgt: PatchDoc, tgtSide: Side): Plan {
           const after = locate(text, tgt, parentPath);
           return after?.kind === 'array' && parent.kind === 'array' && after.items.length === parent.items.length - 1;
         };
-  return { edit, check };
+  return { edit, check, change: { op: 'remove', path: full(tgt, path) } };
 }
 
 function removeBlock(text: string, start: number, end: number, item: boolean): Edit {
@@ -461,4 +489,86 @@ function expectValue(doc: PatchDoc, path: Path, value: unknown): (text: string) 
     const n = locate(text, doc, path);
     return n !== undefined && JSON.stringify(toPlain(n)) === expected;
   };
+}
+
+/**
+ * Whether the new text, as data, is the old document with `change` applied and nothing else: no other key,
+ * item, alias or part outside the root may have changed. Object key order is not compared.
+ */
+function onlyChange(doc: PatchDoc, text: string, change: Change): boolean {
+  const before = parse(doc.text, doc.format);
+  const after = parse(text, doc.format);
+  if (!before.ok || !after.ok) return false;
+  return canonical(toPlain(after.node)) === canonical(withChange(toPlain(before.node), change));
+}
+
+type Plain = Record<string, unknown>;
+
+const isRecord = (v: unknown): v is Plain => v !== null && typeof v === 'object' && !Array.isArray(v);
+
+function withChange(doc: unknown, change: Change): unknown {
+  if (change.op === 'none') return doc;
+  if (change.op === 'set' && change.path.length === 0) return change.value;
+  const root = clone(doc);
+  if (change.op === 'insertItem') {
+    const list = walk(root, change.path);
+    if (!Array.isArray(list) || change.index > list.length) throw new Unsupported();
+    list.splice(change.index, 0, change.value);
+    return root;
+  }
+  const container = walk(root, change.path.slice(0, -1));
+  const last = change.path[change.path.length - 1];
+  if (Array.isArray(container)) {
+    const i = indexIn(container, last);
+    if (i < 0) throw new Unsupported();
+    if (change.op === 'set') container[i] = change.value;
+    else container.splice(i, 1);
+  } else if (isRecord(container) && typeof last === 'string' && last !== '__proto__') {
+    if (change.op === 'set') container[last] = change.value;
+    else if (Object.hasOwn(container, last)) delete container[last];
+    else throw new Unsupported();
+  } else throw new Unsupported();
+  return root;
+}
+
+/** The value at `path`, resolved like selectNode (a field selector picks the first item with that value). */
+function walk(value: unknown, path: Path): unknown {
+  let current = value;
+  for (const seg of path) {
+    if (Array.isArray(current)) {
+      const i = indexIn(current, seg);
+      if (i < 0) throw new Unsupported();
+      current = current[i];
+    } else if (isRecord(current) && typeof seg === 'string' && Object.hasOwn(current, seg)) {
+      current = current[seg];
+    } else throw new Unsupported();
+  }
+  return current;
+}
+
+function indexIn(list: unknown[], seg: PathSeg): number {
+  if (typeof seg === 'number') return seg < list.length ? seg : -1;
+  if (typeof seg === 'string') return -1;
+  return list.findIndex((item) => {
+    if (!isRecord(item) || !Object.hasOwn(item, seg.field)) return false;
+    const v = item[seg.field];
+    return (v === null || typeof v !== 'object') && String(v) === seg.value;
+  });
+}
+
+function clone(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(clone);
+  if (isRecord(value)) return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, clone(v)]));
+  return value;
+}
+
+/** A comparable form of plain data, with object keys sorted. */
+function canonical(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
+  if (isRecord(value)) {
+    const keys = Object.keys(value).sort();
+    return `{${keys.map((k) => `${JSON.stringify(k)}:${canonical(value[k])}`).join(',')}}`;
+  }
+  if (typeof value === 'number' && !Number.isFinite(value)) return String(value);
+  return JSON.stringify(value) ?? 'undefined';
 }

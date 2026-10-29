@@ -33,12 +33,12 @@ export function parsePath(text: string): PathResult {
 
 export type PathListResult = { ok: true; paths: Path[] } | { ok: false; error: string };
 
-/** Parses comma- or newline-separated paths; empty parts are ignored. */
-export function parsePathList(text: string): PathListResult {
+/** Parses comma- or newline-separated paths; empty parts are ignored. `field` names the list in errors. */
+export function parsePathList(text: string, field = 'Includi'): PathListResult {
   const paths: Path[] = [];
   for (const part of splitList(text)) {
     const r = parsePath(part);
-    if (!r.ok) return { ok: false, error: `Includi non valido: ${part}` };
+    if (!r.ok) return { ok: false, error: `${field} non valido: ${part}` };
     paths.push(r.path);
   }
   return { ok: true, paths };

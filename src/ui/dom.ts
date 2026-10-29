@@ -17,3 +17,16 @@ export function step(key: string, i: number, count: number, prev = ['ArrowUp', '
 export function setTabStop(items: Iterable<HTMLElement>, target: HTMLElement): void {
   for (const item of items) item.tabIndex = item === target ? 0 : -1;
 }
+
+/**
+ * Acknowledges a message that just appeared after an action (outcome, refusal): a short fade with a slight drop,
+ * only the fade when the user asks for reduced motion. The element stays visible if animations are unavailable.
+ */
+export function arrive(target: HTMLElement): void {
+  if (typeof target.animate !== 'function') return;
+  const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  target.animate(
+    still ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 0, transform: 'translateY(-3px)' }, { opacity: 1, transform: 'none' }],
+    { duration: 180, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' },
+  );
+}

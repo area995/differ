@@ -24,3 +24,18 @@ export function lineEnd(text: string, offset: number): number {
 export function indentAt(text: string, offset: number): string {
   return /^[ \t]*/.exec(text.slice(lineStart(text, offset)))![0];
 }
+
+/** Line ending to restore when saving: Windows when most lines of `text` end in CRLF, otherwise none (LF). */
+export function eolOf(text: string): '\r\n' | undefined {
+  const crlf = text.match(/\r\n/g)?.length ?? 0;
+  const lf = (text.match(/\n/g)?.length ?? 0) - crlf;
+  return crlf > lf ? '\r\n' : undefined;
+}
+
+/**
+ * The text with every line ending as LF. Editors hold only this form: a textarea reports CRLF as LF, so offsets
+ * computed on the original text would land one character further per line in the editor.
+ */
+export function toLf(text: string): string {
+  return text.replace(/\r\n?/g, '\n');
+}

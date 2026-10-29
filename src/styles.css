@@ -279,6 +279,38 @@ h2 {
   color: var(--error);
 }
 
+/* load / save of all the options, on their own row below the groups */
+.config-actions {
+  display: flex;
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.config-actions .config-name {
+  width: 14rem;
+  max-width: 100%;
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg);
+  font: inherit;
+  font-size: 0.85rem;
+}
+
+.config-msg {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.config-msg.error {
+  color: var(--error);
+}
+
 /* layout */
 /* two panels side by side, more wrap onto new rows */
 .inputs {
@@ -301,6 +333,12 @@ h2 {
 
 /* input panels */
 .panel {
+  /* header, tabs, editor, error: rows shared with the cards beside it, so their editors start at the same height */
+  display: grid;
+  grid-row: span 4;
+  grid-template-rows: subgrid;
+  row-gap: 0;
+  align-content: start;
   min-width: 0;
   padding: 8px;
   border: 1px solid var(--border);
@@ -333,6 +371,9 @@ h2 {
   background: var(--bg);
   color: var(--fg);
   cursor: pointer;
+  transition:
+    border-color 120ms ease-out,
+    color 120ms ease-out;
 }
 
 .icon-btn:hover {
@@ -385,9 +426,10 @@ h2 {
   margin-bottom: 4px;
 }
 
-/* the one small-button style: tree tools, Scegli, apply, matrix actions, status actions */
+/* the one small-button style: tree tools, Scegli, configuration, apply, matrix actions, status actions */
 .tree-tools button,
-.include-pick,
+.subtree-pick,
+.config-actions button,
 .apply button,
 .matrix-actions button,
 .status button {
@@ -400,9 +442,10 @@ h2 {
   font-size: 0.85rem;
   white-space: nowrap;
   cursor: pointer;
+  transition: border-color 120ms ease-out;
 }
 
-:is(.tree-tools button, .include-pick, .apply button, .matrix-actions button, .status button):hover:not(:disabled) {
+:is(.tree-tools button, .subtree-pick, .config-actions button, .apply button, .matrix-actions button, .status button):hover:not(:disabled) {
   border-color: var(--accent);
 }
 
@@ -421,7 +464,7 @@ h2 {
 }
 
 .tree-body > .tree,
-.include-picker > .tree {
+.subtree-picker > .tree {
   padding-left: 0;
 }
 
@@ -470,6 +513,11 @@ h2 {
   .tree-row .toggle svg {
     transition: none;
   }
+
+  /* no movement; the wash is a fade in place and stays, as it says where to look */
+  .subtree-picker {
+    animation: none;
+  }
 }
 
 button.toggle {
@@ -516,7 +564,9 @@ button.toggle {
   font-style: italic;
 }
 
-.include-picker {
+.subtree-picker {
+  /* opened by Scegli: it unrolls from the field above, the tree it lists is already in place */
+  animation: unroll 200ms cubic-bezier(0.16, 1, 0.3, 1);
   flex-basis: 100%;
   max-height: 260px;
   overflow: auto;
@@ -555,7 +605,8 @@ button.toggle {
 
 /* quiet until used: reads as part of the heading, becomes a field on hover and focus */
 .slot-name {
-  width: 11ch;
+  /* wide enough for its placeholder, "nome (es. prod)" */
+  width: 15ch;
   min-width: 0;
   padding: 2px 6px;
   border: 1px solid transparent;
@@ -582,8 +633,14 @@ button.toggle {
   font-size: 0.85rem;
 }
 
-.file-btn {
+.panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin-left: auto;
+}
+
+.file-btn {
   padding: 0;
   border: 0;
   background: none;
@@ -684,8 +741,48 @@ textarea {
 
 /* low specificity, so that the difference kinds below can color the bar */
 :where(.backdrop-lines) > div {
+  position: relative;
   height: 1.5em;
   border-left: 4px solid transparent;
+}
+
+/*
+ * lines the eye has to find: a Signal Blue wash under the text that dries away, briefly where a selection
+ * lands, longer where an apply has just written (the lines then settle into Applied Gray)
+ */
+.backdrop-lines > .wash::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  opacity: 0;
+  animation: wash 600ms ease-out both;
+  animation-delay: inherit;
+}
+
+.backdrop-lines > .wash-post::after {
+  --wash-peak: 0.32;
+  animation-duration: 1200ms;
+}
+
+/* held long enough to be seen after the jump, then dried away */
+@keyframes wash {
+  0%,
+  25% {
+    opacity: var(--wash-peak, 0.22);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes unroll {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    clip-path: inset(0);
+  }
 }
 
 .backdrop-lines > .applied {
@@ -1001,6 +1098,14 @@ textarea {
   text-align: left;
   vertical-align: top;
   overflow-wrap: anywhere;
+}
+
+/* on a phone, columns too narrow would split paths and values mid-word: keep them whole and scroll sideways */
+@media (max-width: 600px) {
+  .matrix th,
+  .matrix td {
+    white-space: nowrap;
+  }
 }
 
 .matrix th {

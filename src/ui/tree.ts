@@ -24,7 +24,13 @@ export type TreeOptions = {
   expanded: Map<string, boolean>;
   /** Nodes shallower than this are open unless overridden. */
   defaultDepth: number;
-  checks?: { state(id: string): CheckState; onChange(id: string, checked: boolean): void };
+  /** `label` names each box with its path ("Includi $.db"); `implied` explains a box checked through an ancestor. */
+  checks?: {
+    state(id: string): CheckState;
+    onChange(id: string, checked: boolean): void;
+    label?: string;
+    implied?: string;
+  };
   onSelect?(item: TreeItem): void;
 };
 
@@ -127,9 +133,9 @@ function entry(item: TreeItem, depth: number, options: TreeOptions): HTMLElement
     box.tabIndex = -1;
     box.checked = state !== 'off';
     box.disabled = state === 'implied';
-    const implied = 'Incluso tramite un nodo superiore';
+    const { label = 'Includi', implied = 'Incluso tramite un nodo superiore' } = options.checks;
     if (state === 'implied') box.title = implied;
-    box.setAttribute('aria-label', state === 'implied' ? `Includi ${item.id}: ${implied.toLowerCase()}` : `Includi ${item.id}`);
+    box.setAttribute('aria-label', state === 'implied' ? `${label} ${item.id}: ${implied.toLowerCase()}` : `${label} ${item.id}`);
     li.setAttribute('aria-checked', String(state !== 'off'));
     box.addEventListener('change', () => options.checks!.onChange(item.id, box.checked));
     row.append(box);

@@ -40,6 +40,22 @@ describe('filterEntries', () => {
     expect(summary(filterEntries(es, [['db', 'pool']]))).toEqual(['changed $.db.pool.x']);
   });
 
+  it('drops entries inside the excluded subtrees', () => {
+    expect(summary(filterEntries(entries, [], [['server', 'tls'], ['db']]))).toEqual([
+      'changed $.server.port',
+      'changed $.name',
+    ]);
+  });
+
+  it('lets an exclusion win over an inclusion', () => {
+    expect(summary(filterEntries(entries, [['server']], [['server', 'tls']]))).toEqual(['changed $.server.port']);
+    expect(filterEntries(entries, [['server', 'port']], [['server']])).toEqual([]);
+  });
+
+  it('keeps structural changes on ancestors of an exclusion', () => {
+    expect(summary(filterEntries(entries, [], [['db', 'pool']]))).toContain('removed $.db');
+  });
+
   it('matches field selectors by field and value', () => {
     const e: DiffEntry = { kind: 'changed', path: ['users', { field: 'name', value: 'bob' }, 'role'] };
     expect(filterEntries([e], [['users', { field: 'name', value: 'bob' }]])).toEqual([e]);
